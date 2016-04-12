@@ -16,15 +16,16 @@
     /*jshint multistr: true */
     // Make the Top navbar
 
+    GM_addStyle("#Custom_MainBar { width: 1000px; \
+                              height: 100px; \
+                              display: block; \
+                              position: relative;\
+                              margin: auto; \
+                              color: #ccc; \
+                              background-color: #1A3753 \
+                              border-radius: 5px; }");
+
     var MainBar = $("<div>", {id: "Custom_MainBar", class: ""});
-    $(MainBar).css('width', '1000px');
-    $(MainBar).css('height', '100px');
-    $(MainBar).css('display', 'block');
-    $(MainBar).css('position', 'relative');
-    $(MainBar).css('margin', 'auto');
-    $(MainBar).css('color', '#ccc');
-    $(MainBar).css('background-color', '#1A3753');
-    $(MainBar).css('border-radius', '5px');
 
     $('#MainPanel').css('width', '1002px');
 
