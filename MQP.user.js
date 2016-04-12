@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.21
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -22,7 +22,7 @@
                               position: relative;\
                               margin: auto; \
                               color: #ccc; \
-                              background-color: #1A3753 \
+                              background-color: #1A3753; \
                               border-radius: 5px; }");
 
     var MainBar = $("<div>", {id: "Custom_MainBar", class: ""});
