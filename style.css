@@ -1,0 +1,11 @@
+#Custom_MainBar {
+  width: 990px;
+  height: 90px;
+  display: block;
+  position: relative;
+  margin: auto;
+  color: #ccc;
+  background-color: #1A3753;
+  border-radius: 5px;
+  padding: 5px;
+}

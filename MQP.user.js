@@ -1,14 +1,16 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
 // @match        http://www.midenquest.com/Game.aspx
+// @resource     MainStylesheet https://github.com/Ryalane/MidenQuestPlus/raw/master/style.css
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
+// @grant        GM_getResourceText
 // ==/UserScript==
 
 (function() {
@@ -16,15 +18,7 @@
     /*jshint multistr: true */
     // Make the Top navbar
 
-    GM_addStyle("#Custom_MainBar { width: 990px; \
-                              height: 90px; \
-                              display: block; \
-                              position: relative;\
-                              margin: auto; \
-                              color: #ccc; \
-                              background-color: #1A3753; \
-                              border-radius: 5px; \
-                              padding: 5px;}");
+    GM_addStyle(GM_getResourceText("MainStylesheet"));
 
     var MainBar = $("<div>", {id: "Custom_MainBar"});
 
