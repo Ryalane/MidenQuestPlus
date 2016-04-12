@@ -26,7 +26,7 @@
                               border-radius: 5px; \
                               padding: 5px;}");
 
-    var MainBar = $("<div>", {id: "Custom_MainBar", class: ""});
+    var MainBar = $("<div>", {id: "Custom_MainBar"});
 
     $('#MainPanel').css('width', '1002px');
 
@@ -68,12 +68,9 @@ setTimeout(function () { ChangeChatChannel(1); }, 1000);
 
 // Setup the key events
 $( document ).keydown(function(e) {
-    console.log("E: " + e);
     var keycode = (e.which) ? e.which : e.keyCode;
-    console.log(keycode);
     if (keycode == 9)
     {
-        console.log("9");
         NextTab();
         e.preventDefault();
     }
