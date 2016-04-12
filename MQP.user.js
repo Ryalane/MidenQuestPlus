@@ -1,11 +1,14 @@
 // ==UserScript==
-// @name         MQO Enhanced
+// @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  try to take over the world!
-// @author       You
+// @description  Provides the user with some enhancements to MidenQuest
+// @author       Ryalane
+// @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
 // @match        http://www.midenquest.com/Game.aspx
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_addStyle
 // ==/UserScript==
 
 (function() {
