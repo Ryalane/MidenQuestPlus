@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.21
+// @version      0.3
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -16,20 +16,23 @@
     /*jshint multistr: true */
     // Make the Top navbar
 
-    GM_addStyle("#Custom_MainBar { width: 1000px; \
-                              height: 100px; \
+    GM_addStyle("#Custom_MainBar { width: 990px; \
+                              height: 90px; \
                               display: block; \
                               position: relative;\
                               margin: auto; \
                               color: #ccc; \
                               background-color: #1A3753; \
-                              border-radius: 5px; }");
+                              border-radius: 5px; \
+                              padding: 5px;}");
 
     var MainBar = $("<div>", {id: "Custom_MainBar", class: ""});
 
     $('#MainPanel').css('width', '1002px');
 
     $("body").prepend(MainBar);
+
+    $(MainBar).prepend('<h1>Stuff will go here eventually</h1>');
 
     // Setup the Title bar
 var titlething = setInterval(function () {
