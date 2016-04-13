@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.69
+// @version      0.70
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -19,10 +19,28 @@
     'use strict';
     GM_addStyle(GM_getResourceText("MainStylesheet"));
 
+
 /* Handle Settings */
 // Settings Used
 // Workload_useAlerts = true/false
 // Chat_AllowTabCycling = true/false
+var SetupSettings = function() {
+    // Set Workload Alerts
+      if (GM_getValue('Workload_useAlerts')) {
+          $('input[name="WorkloadAlert"]').prop('checked', true);
+      } else {
+          // Should be default, but let's do it anyways
+          $('input[name="WorkloadAlert"]').prop('checked', false);
+      }
+
+    // Set Tab Cycling
+    if (GM_getValue('Chat_AllowTabCycling')) {
+          $('input[name="TabCycling"]').prop('checked', true);
+      } else {
+          // Should be default, but let's do it anyways
+          $('input[name="TabCycling"]').prop('checked', false);
+      }
+};
 
 /* Change the look of the page slightly */
 
@@ -31,14 +49,9 @@
   url: "https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/Navbar.html",
   onload: function(response) {
     $("body").prepend(response.responseText);
+    SetupSettings();
   }
 });
-
-    // Create the top navbar
-    //var MainBar = $("<div>", {id: "Custom_MainBar"});
-    //console.log(GM_getResourceText(NavbarFile));
-    //$("body").prepend(GM_getResourceText(NavbarFile));
-    //$(MainBar).prepend('<h1>Stuff will go here eventually</h1>');
 
     // Match the navbar size
     $('#MainPanel').css('width', '1002px');
@@ -56,19 +69,13 @@
     var CurWorkLoad = 0;
 
     var CheckWorkloadSettings = function() {
-      if (GM_getValue('Workload_useAlerts')) {
-        if (GM_getValue('Workload_useAlerts') === true) {
-          $('input[name="WorkloadAlert"]').prop('checked', true);
-        } else {
-          // Should be default, but let's do it anyways
-          $('input[name="WorkloadAlert"]').prop('checked', false);
-        }
-      }
         useAlerts = $('input[name="WorkloadAlert"]').is(':checked');
 
         // Save every check
         if (GM_getValue('Workload_useAlerts') !== useAlerts) {
-          GM_setValue('Workload_useAlerts', useAlerts);
+            console.log("Saving because GM = " + GM_getValue('Workload_useAlerts') + ' local = ' + useAlerts);
+            GM_setValue('Workload_useAlerts', useAlerts);
+            $('input[name="WorkloadAlert"]').prop('checked', useAlerts);
         }
     };
 
@@ -141,25 +148,16 @@
     var selectedTab = 1;
     var allowTabCycling = true;
 
-    // Put this in an interval eventually and set it to a function instead
-    var ChatSettings = setInterval(function () {
-      // If the value exists
-      if (GM_getValue('Chat_AllowTabCycling')) {
-        // If its set to true, then check the option
-        if (GM_getValue('Chat_AllowTabCycling') === true) {
-          $('input[name="TabCycling"]').prop('checked', true);
-        } else {
-          // Should be default, but let's do it anyways
-          $('input[name="TabCycling"]').prop('checked', false);
-        }
-      }
+    var HandleChatSettings = function() {
         allowTabCycling = $('input[name="TabCycling"]').is(':checked');
 
         // Save every check
-        if (GM_getValue('Chat_AllowTabCycling') !== allowTabCycling) {
-          GM_setValue('Chat_AllowTabCycling', allowTabCycling);
+        if (GM_getValue('Chat_AllowTabCycling') !== useAlerts) {
+            GM_setValue('Chat_AllowTabCycling', useAlerts);
+            $('input[name="TabCycling"]').prop('checked', useAlerts);
         }
-    }, 1000);
+    };
+
     // Create a couple helper functions
     var NextTab = function() {
         // Set what the next tab is
@@ -176,6 +174,9 @@
     // Set the tab to #1 just in case
     setTimeout(function () { ChangeChatChannel(1); }, 1000);
 
+    setInterval(function () {
+        HandleChatSettings();
+    }, 250);
 
     // Setup the key events
     $( document ).keydown(function(e) {
