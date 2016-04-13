@@ -7,6 +7,7 @@
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
 // @match        http://www.midenquest.com/Game.aspx
 // @resource     MainStylesheet https://github.com/Ryalane/MidenQuestPlus/raw/master/style.css
+// @resource     NavbarFile https://github.com/Ryalane/MidenQuestPlus/raw/master/Navbar.html
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
