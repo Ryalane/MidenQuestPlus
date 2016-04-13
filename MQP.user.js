@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -20,9 +20,10 @@
 /* Change the look of the page slightly */
 
     // Create the top navbar
-    var MainBar = $("<div>", {id: "Custom_MainBar"});
-    $("body").prepend(MainBar);
-    $(MainBar).prepend('<h1>Stuff will go here eventually</h1>');
+    // Will uncomment when there's stuff to add
+    //var MainBar = $("<div>", {id: "Custom_MainBar"});
+    //$("body").prepend(MainBar);
+    //$(MainBar).prepend('<h1>Stuff will go here eventually</h1>');
 
     // Match the navbar size
     $('#MainPanel').css('width', '1002px');
