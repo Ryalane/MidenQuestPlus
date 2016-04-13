@@ -17,5 +17,11 @@
   border: 1px white solid;
   padding: 5px;
   margin: 5px;
-  display: inline-block;
+  display: inline-flex;
+  align-content: space-between;
+  align-items: center;
+  flex-direction: column;
+  flex-wrap: wrap;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
