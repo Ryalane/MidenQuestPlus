@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.85
+// @version      0.86
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -153,8 +153,7 @@ var observer = new MutationObserver(function(mutations) {
       }
       if (message_Name === userName) {
         // If it was sent by you, add a background
-        messageContainer.css('background', '#000');
-        messageContainer.css('color', '#F0F')
+        messageContainer.css('background', '#ddd');
       }
       if (message_Text.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
           messageContainer.css("background","#FFA27F");
@@ -164,6 +163,7 @@ var observer = new MutationObserver(function(mutations) {
       console.log("Time: " + message_timeStamp + ", Name: " + message_Name + ", Text: " + message_Text);
       console.log(mutation);
     }
+    messageContainer.css('width', '100%');
   });
 });
 
