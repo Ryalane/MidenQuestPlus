@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.80
+// @version      0.87
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -79,7 +79,6 @@ var Settings = {
 
     if (container === 1) {
       AppendTo = $('#Custom_MainBar_Box_Workload');
-      console.log("1");
     } else if (container === 2) {
       AppendTo = $('#Custom_MainBar_Box_Chat');
     } else if (container === 3) {
@@ -117,9 +116,75 @@ var Settings = {
 
 Settings.setupUI();
 var settings = Settings.load();
-console.log(settings.useAlerts);
 Settings.addBool(1, "useAlerts", "Alert when out of work", false);
 Settings.addBool(2, "allowTabCycling", "Change channels with tab", false);
+
+// select the target node
+var target = document.querySelector('#ChatLog');
+
+// create an observer instance
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation, i) {
+    var messageContainer = $(mutation.addedNodes[0]);
+    var message = mutation.addedNodes[i].innerText;
+    // Check if its a log
+    if (message) {
+      var message_isLog = message.split(']')[1][0] === '[' ? false : true;
+    }
+    // If it isn't, then parse it
+    if (!message_isLog && message) {
+      var message_timeStamp = message.split(']')[0].substring(1);
+      var message_Name = message.split(']')[2].substring(1).split(':')[0];
+      // Handle the message text itself
+      var message_Text_Array = message.split(':');
+      var message_Text = '';
+      if (message_Text_Array.length > 2) {
+        for (var i = 0; i < message_Text_Array.length; i++) {
+          if (i < 2) {
+            // do nothing
+          } else if (i > 2) {
+            // Prepend with : since it got cut out
+            message_Text += ":" + message_Text_Array[i];
+          } else {
+            // Just show it like normal since it's the first part of the message_Text
+            message_Text = message_Text_Array[i].substring(1);
+          }
+        }
+      }
+      if (message_Name === userName) {
+        // If it was sent by you, add a background
+        messageContainer.css('background', '#ddd');
+      }
+      if (message_Text.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
+          messageContainer.css('background','#FFA27F');
+          messageContainer.css('width', '100%');
+          // Play sound
+          userIsMentioned = true;
+      }
+      console.log("Time: " + message_timeStamp + ", Name: " + message_Name + ", Text: " + message_Text);
+      console.log(mutation);
+    }
+    messageContainer.css('width', '100%');
+  });
+});
+
+// configuration of the observer:
+var config = { attributes: true, childList: true, characterData: true };
+
+// Setup the username
+var userName = '';
+var getUsername = function() {
+  userName = $('#SideName').text();
+  if (userName === '???' || userName === '') {
+    setTimeout(getUsername, 100);
+  } else {
+    // When the name has been stored, start the chat observer
+    observer.observe(target, config);
+  }
+}
+// Give it 100 ms to load
+setTimeout(getUsername, 100);
+
 
 // Settings Used
 // Workload_useAlerts = true/false
