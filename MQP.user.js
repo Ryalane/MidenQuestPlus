@@ -60,7 +60,7 @@
 
       // After the check, update the current/max workload
       if (isWorking) {
-        tempWorkload = Production.split(' ')[1].split('/');
+        var tempWorkload = Production.split(' ')[1].split('/');
         CurWorkLoad = tempWorkload[0];
         MaxWorkload = tempWorkload[1];
       }
