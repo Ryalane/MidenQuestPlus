@@ -1,58 +1,44 @@
 // ==UserScript==
 // @name         MidenQuestPlus
-// @namespace    http://tampermonkey.net/
-// @version      0.75
+// @namespace    MidenQuestPlus_tampermonkey
+// @version      0.80
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
 // @match        http://www.midenquest.com/Game.aspx
 // @resource     MainStylesheet https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/style.css
-// @resource     NavbarFile https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/Navbar.html
-// @grant        GM_getValue
-// @grant        GM_setValue
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @grant        GM_xmlhttpRequest
+// @homepage     https://github.com/Ryalane/MidenQuestPlus
 // ==/UserScript==
 
 (function() {
     'use strict';
     GM_addStyle(GM_getResourceText("MainStylesheet"));
 
+    var versionString = "";
+    if (typeof GM_info !== "undefined") {
+        versionString = GM_info.script.version;
+        console.log(versionString);
+    }
 
 /* Handle Settings */
-// Settings Used
-// Workload_useAlerts = true/false
-// Chat_AllowTabCycling = true/false
-var SetupSettings = function() {
-    // Set Workload Alerts
-      if (GM_getValue('Workload_useAlerts')) {
-          $('input[name="WorkloadAlert"]').prop('checked', true);
-      } else {
-          // Should be default, but let's do it anyways
-          $('input[name="WorkloadAlert"]').prop('checked', false);
-      }
+var Settings = {
+  setupUI: function () {
 
-    // Set Tab Cycling
-    if (GM_getValue('Chat_AllowTabCycling')) {
-          $('input[name="TabCycling"]').prop('checked', true);
-      } else {
-          // Should be default, but let's do it anyways
-          $('input[name="TabCycling"]').prop('checked', false);
-      }
-};
-
-/* Change the look of the page slightly */
-
-    GM_xmlhttpRequest({
-  method: "GET",
-  url: "https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/Navbar.html",
-  onload: function(response) {
-    $("body").prepend(response.responseText);
+    // Make the container
+    $('body').prepend('<div id="Custom_MainBar"></div>');
+    // Set the title
+    $('#Custom_MainBar').append('<h1 id="Custom_MainBar_Title"></h1>');
     $('#Custom_MainBar_Title').text('MidenQuest+ v' + versionString);
-    SetupSettings();
-  }
-});
+    // Setup boxes
+    $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Workload" class="Custom_MainBar_Box"></div>');
+    $('#Custom_MainBar_Box_Workload').append('<h1>Workload Settings</h1>');
+    $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Chat" class="Custom_MainBar_Box"></div>');
+    $('#Custom_MainBar_Box_Chat').append('<h1>Chat Settings');
+    $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Reserved" class="Custom_MainBar_Box"></div>');
+    $('#Custom_MainBar_Box_Reserved').append('<h1>Reserved Settings');
 
     // Match the navbar size
     $('#MainPanel').css('width', '1002px');
@@ -68,15 +54,78 @@ var SetupSettings = function() {
     // Footer settings
     var footer = $('.aLink').parent();
     $(footer).css('border-top', '0px');
+  },
 
-    var versionString = "";
-    if (typeof GM_info !== "undefined") {
-        versionString = GM_info.script.version;
-        console.log(versionString);
+  load: function loadSetting() {
+    var setting = localStorage.getItem('MidenQuestPlus-settings');
+
+    try {
+      setting = setting ? JSON.parse(setting) : {};
+    } catch(e) {}
+
+    setting = setting || {};
+
+    return setting;
+  },
+
+  save: function saveSetting(settings) {
+    localStorage.setItem('MidenQuestPlus-settings', JSON.stringify(settings));
+  },
+
+  // Containers in order (1 = Workload, 2 = Chat, 3 = Reserved)
+  addBool: function addBoolSetting(container, name, description, defaultSetting, callback) {
+    defaultSetting = settings[name] || defaultSetting;
+    var AppendTo = '';
+
+    if (container === 1) {
+      AppendTo = $('#Custom_MainBar_Box_Workload');
+      console.log("1");
+    } else if (container === 2) {
+      AppendTo = $('#Custom_MainBar_Box_Chat');
+    } else if (container === 3) {
+      AppendTo = $('#Custom_MainBar_Box_Reserved');
     }
 
+    $(AppendTo).append('<div><label><input type="checkbox" name="setting-' + name + '"' + (defaultSetting ? ' checked' : '') + '>' + description + '</label></div>');
+            $("input[name='setting-" + name + "']").change(function() {
+                settings[name] = !settings[name];
+                Settings.save(settings);
+
+                if(callback) {
+                    callback();
+                }
+            });
+            if (settings[name] !== undefined) {
+                $("input[name='setting-" + name + "']").prop("checked", settings[name]);
+            } else {
+                settings[name] = defaultSetting;
+            }
+  },
+
+  addRadio: function addRadioSetting(container, name, description, items, defaultSettings, callback) {
+
+  },
+
+  addInput: function addInputSetting(container, name, description, defaultSetting, callback) {
+
+  },
+
+  addButton: function(appendToID, newButtonID, description, callback, options) {
+
+  }
+};
+
+Settings.setupUI();
+var settings = Settings.load();
+console.log(settings.useAlerts);
+Settings.addBool(1, "useAlerts", "Alert when out of work", false);
+Settings.addBool(2, "allowTabCycling", "Change channels with tab", false);
+
+// Settings Used
+// Workload_useAlerts = true/false
+// Chat_AllowTabCycling = true/false
+
 /* Modify the title of the page */
-    var useAlerts = 'false';
     var doneAlerting = false;
     var Production = '';
     var ProductionTitle = '';
@@ -85,16 +134,7 @@ var SetupSettings = function() {
     var MaxWorkload = 0;
     var CurWorkLoad = 0;
 
-    var CheckWorkloadSettings = function() {
-        useAlerts = $('input[name="WorkloadAlert"]').is(':checked');
-
-        // Save every check
-        if (GM_getValue('Workload_useAlerts') !== useAlerts) {
-            console.log("Saving because GM = " + GM_getValue('Workload_useAlerts') + ' local = ' + useAlerts);
-            GM_setValue('Workload_useAlerts', useAlerts);
-            $('input[name="WorkloadAlert"]').prop('checked', useAlerts);
-        }
-    };
+    var StopWorkButton = $('#workloadStopButton');
 
     var CheckWork = function() {
       Production = $('.prgActionOverlay').text();
@@ -136,7 +176,7 @@ var SetupSettings = function() {
         title = ProductionTitle + ' ' + CurWorkLoad + ' / ' + MaxWorkload;
       } else {
         if (ProductionTitle) {
-            if (useAlerts && !doneAlerting) {
+            if (settings.useAlerts && !doneAlerting) {
 
                 alert(ProductionTitle + ' has stopped');
                 doneAlerting = true;
@@ -154,7 +194,6 @@ var SetupSettings = function() {
     // Check what the title should be and then update it
 
     var titlething = setInterval(function () {
-    CheckWorkloadSettings();
     CheckWork();
     UpdateTitle();
     }, 1000);
@@ -163,17 +202,6 @@ var SetupSettings = function() {
     var TabContainer = $('.Tabs>ul');
     var tabAmount = $('.Tabs>ul').children().size();
     var selectedTab = 1;
-    var allowTabCycling = true;
-
-    var HandleChatSettings = function() {
-        allowTabCycling = $('input[name="TabCycling"]').is(':checked');
-
-        // Save every check
-        if (GM_getValue('Chat_AllowTabCycling') !== useAlerts) {
-            GM_setValue('Chat_AllowTabCycling', useAlerts);
-            $('input[name="TabCycling"]').prop('checked', useAlerts);
-        }
-    };
 
     // Create a couple helper functions
     var NextTab = function() {
@@ -190,10 +218,6 @@ var SetupSettings = function() {
 
     // Set the tab to #1 just in case
     setTimeout(function () { ChangeChatChannel(1); }, 1000);
-
-    setInterval(function () {
-        HandleChatSettings();
-    }, 250);
 
     // Handle Chat tab clicking
     $('#ChatCh1').click(function () {
@@ -215,7 +239,7 @@ var SetupSettings = function() {
         if (keycode == 9)
         {
           // TODO: Shift + tab for PreviousTab()
-          if (allowTabCycling) {
+          if (settings.allowTabCycling) {
             NextTab();
             e.preventDefault();
           }
