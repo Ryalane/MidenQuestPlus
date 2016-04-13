@@ -1,6 +1,7 @@
 #Custom_MainBar {
   width: 990px;
-  height: 90px;
+  min-height: 90px;
+  max-height: 270px;
   display: block;
   position: relative;
   margin: auto;
@@ -8,4 +9,13 @@
   background-color: #1A3753;
   border-radius: 5px;
   padding: 5px;
+}
+
+.Custom_MainBar_Box {
+  width: 300px;
+  height: 69px;
+  border: 1px white solid;
+  padding: 5px;
+  margin: 5px;
+  display: inline-block;
 }

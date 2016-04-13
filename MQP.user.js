@@ -20,10 +20,9 @@
 /* Change the look of the page slightly */
 
     // Create the top navbar
-    // Will uncomment when there's stuff to add
-    //var MainBar = $("<div>", {id: "Custom_MainBar"});
-    //$("body").prepend(MainBar);
-    //$(MainBar).prepend('<h1>Stuff will go here eventually</h1>');
+    var MainBar = $("<div>", {id: "Custom_MainBar"});
+    $("body").prepend(MainBar);
+    $(MainBar).prepend('<h1>Stuff will go here eventually</h1>');
 
     // Match the navbar size
     $('#MainPanel').css('width', '1002px');
