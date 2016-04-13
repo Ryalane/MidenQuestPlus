@@ -125,6 +125,7 @@ var target = document.querySelector('#ChatLog');
 // create an observer instance
 var observer = new MutationObserver(function(mutations) {
   mutations.forEach(function(mutation, i) {
+    var messageContainer = $(mutation.addedNodes[0]);
     var message = mutation.addedNodes[i].innerText;
     // Check if its a log
     if (message) {
@@ -150,7 +151,16 @@ var observer = new MutationObserver(function(mutations) {
           }
         }
       }
-
+      if (message_Name === userName) {
+        // If it was sent by you, add a background
+        messageContainer.css('background', '#000');
+        messageContainer.css('color', '#F0F')
+      }
+      if (message_Text.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
+          messageContainer.css("background","#FFA27F");
+          // Play sound
+          userIsMentioned = true;
+      }
       console.log("Time: " + message_timeStamp + ", Name: " + message_Name + ", Text: " + message_Text);
       console.log(mutation);
     }
