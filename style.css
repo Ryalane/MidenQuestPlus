@@ -1,5 +1,5 @@
 #Custom_MainBar {
-  width: 990px;
+  width: 992px;
   min-height: 90px;
   max-height: 270px;
   display: block;
@@ -7,7 +7,8 @@
   margin: auto;
   color: #ccc;
   background-color: #1A3753;
-  border-radius: 5px;
+  border-radius: 5px 5px 0px 0px;
+  border-bottom: 1px white solid;
   padding: 5px;
 }
 .Custom_MainBar_Box {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.71
+// @version      0.75
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -49,14 +49,31 @@ var SetupSettings = function() {
   url: "https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/Navbar.html",
   onload: function(response) {
     $("body").prepend(response.responseText);
+    $('#Custom_MainBar_Title').text('MidenQuest+ v' + versionString);
     SetupSettings();
   }
 });
 
     // Match the navbar size
     $('#MainPanel').css('width', '1002px');
+    $('#MainPanel').css('margin-top', '0px');
+    $('#MainPanel').css('height', '765px');
+
+    $('#ZoneContent').css('border-top-left-radius', '0px');
+    $('#ZoneContent').css('padding-top', '0px');
+    $('#TopScreen').css('padding-top', '0px');
+    $('#ZoneOptions').css('border-top-right-radius', '0px');
     // Center the text a bit better
     $('.prgActionOverlay').css('margin-top', '-19px');
+    // Footer settings
+    var footer = $('.aLink').parent();
+    $(footer).css('border-top', '0px');
+
+    var versionString = "";
+    if (typeof GM_info !== "undefined") {
+        versionString = GM_info.script.version;
+        console.log(versionString);
+    }
 
 /* Modify the title of the page */
     var useAlerts = 'false';
