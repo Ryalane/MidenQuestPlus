@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    http://tampermonkey.net/
-// @version      0.70
+// @version      0.71
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -177,6 +177,20 @@ var SetupSettings = function() {
     setInterval(function () {
         HandleChatSettings();
     }, 250);
+
+    // Handle Chat tab clicking
+    $('#ChatCh1').click(function () {
+      selectedTab = 1;
+    });
+    $('#ChatCh2').click(function () {
+      selectedTab = 2;
+    });
+    $('#ChatCh3').click(function () {
+      selectedTab = 3;
+    });
+    $('#ChatCh4').click(function () {
+      selectedTab = 4;
+    });
 
     // Setup the key events
     $( document ).keydown(function(e) {
