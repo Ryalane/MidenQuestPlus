@@ -35,8 +35,8 @@
     var ProductionTitle = '';
     var isWorking = false;
 
-    var MaxWorkload
-    var CurWorkLoad
+    var MaxWorkload = 0;
+    var CurWorkLoad = 0;
     var CheckWork = function() {
       Production = $('.prgActionOverlay').text();
       if (Production[0] === 'S') {
@@ -64,7 +64,7 @@
         CurWorkLoad = tempWorkload[0];
         MaxWorkload = tempWorkload[1];
       }
-    }
+    };
 
     // Little helper method for setting the title
     var UpdateTitle = function() {
@@ -81,7 +81,7 @@
       }
 
       document.title = title;
-    }
+    };
 
     // Check what the title should be and then update it
 
