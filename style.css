@@ -25,3 +25,19 @@
   overflow-x: hidden;
   overflow-y: overlay;
 }
+.chat-timestamp {
+  font-weight: normal;
+  font-size: 16px;
+}
+.chat-title {
+  font-weight: bold;
+  font-size: 16px;
+}
+.chat-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+.chat-message {
+  font-weight: normal;
+  font-size: 14px;
+}

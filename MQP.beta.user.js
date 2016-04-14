@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.93
+// @version      0.95
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -140,8 +140,8 @@ Settings.setupUI();
 var settings = Settings.load();
 Settings.addBool(1, "useAlerts", "Alert when out of work", false);
 Settings.addBool(2, "allowTabCycling", "Change channels with tab", false);
-Settings.addInput(2, "userBackground", "User Backround Colour", "#DDD");
-Settings.addInput(2, "mentionBackground", "Mention Background Colour", "#FFA27F");
+Settings.addInput(2, "userBackground", "User Backround Colour", "rgba(0, 180, 180, 0.2)");
+Settings.addInput(2, "mentionBackground", "Mention Background Colour", "rgba(255, 165, 50, 0.5)");
 
 // Settings Used
 // Workload_useAlerts = true/false
@@ -230,6 +230,7 @@ var ParseChat = function(MessageContainer) {
   var Message_Title_Color;
   var Message_Text_Array;
   var Message_Text;
+  var Message_Link;
   var Message_isLog = false;
   var Message_isLineBreak = false;
   if (MessageContainer) {
@@ -259,11 +260,16 @@ var ParseChat = function(MessageContainer) {
       Message_Name = Message.split(']')[2].substring(1).split(':')[0];
 
       // Get the users title
-      Message_Title = Message.split(' ')[0].substring(7);
+      Message_Title = Message.split(' ')[0].substring(8).slice(0,-1);
       // Get the users title colour
       // TODO: Get this into 1 line
       var Title_Color_Holder = $(MessageContainer).children().children()[0];
       Message_Title_Color = $(Title_Color_Holder).css('color');
+
+      // Get the link (onclick)
+      var linkContainer = $("span", MessageContainer).first();
+      var theLink = $(linkContainer).children().first();
+      Message_Link = $(theLink).attr('onclick');
 
       // Parse the message itself
       Message_Text_Array = Message.split(':');
@@ -285,7 +291,7 @@ var ParseChat = function(MessageContainer) {
       }
 
       // Now we have to put all this new info into an object
-      var ReturnValue = {Raw: Message, TimeStamp: Message_timeStamp, Name: Message_Name, MessageText: Message_Text, MessageTitle: Message_Title, MessageTitleColor: Message_Title_Color};
+      var ReturnValue = {Raw: Message, TimeStamp: Message_timeStamp, Name: Message_Name, MessageText: Message_Text, MessageTitle: Message_Title, MessageTitleColor: Message_Title_Color, MessageLink: Message_Link};
       return ReturnValue;
     } else if (Message_isLog) {
       // If its a log, just mark it as 1 and return it as it is
@@ -303,13 +309,12 @@ var ParseChat = function(MessageContainer) {
 var ChatBox = document.querySelector('#ChatLog');
 
 var ChatMutationHandler = function(mutations) {
-  console.log("Observer on");
   mutations.forEach(function(mutation, i) {
       var CurrentMessage = $(mutation.addedNodes[i]);
+      var NextMessage = $(CurrentMessage).next();
 
-      if (CurrentMessage) {
         HandleChat(CurrentMessage);
-      }
+        HandleChat(NextMessage);
   });
 };
 
@@ -328,9 +333,7 @@ var ChatChange = function() {
     for (var i = 0; i < Messages.length; i++) {
       // Go through every child, including line breaks
       var CurrentMessage = $(Messages)[i];
-      if (CurrentMessage) {
-        HandleChat(CurrentMessage);
-      }
+      HandleChat(CurrentMessage);
     }
       observer.observe(ChatBox, config);
   }, 200);
@@ -353,15 +356,24 @@ var HandleChat = function(MessageContainer) {
   var ParsedMessage = ParseChat(MessageContainer);
 
   if (ParsedMessage.noContainer) {
-    // Nothing to do
+    $(MessageContainer).remove()
   } else if (ParsedMessage.isLineBreak) {
     $(MessageContainer).remove();
   } else if (ParsedMessage.isLog) {
     // Log
   } else {
+    $(MessageContainer).empty();
+    $(MessageContainer).append('<span class="chat-timestamp">' + '[' + ParsedMessage.TimeStamp + ']' + '</span>');
+    //.text(ParsedMessage.TimeStamp);
+    $(MessageContainer).append('<span onclick="' + ParsedMessage.MessageLink + '" class="chat-title" style="color: ' + ParsedMessage.MessageTitleColor + '">' + '[' + ParsedMessage.MessageTitle + '] ' + '</span>');
+    //.text(ParsedMessage.MessageTitle);
+    $(MessageContainer).append('<span onclick="' + ParsedMessage.MessageLink + '" class="chat-name">' + ParsedMessage.Name + ': ' + '</span>');
+    //.text(ParsedMessage.Name);
+    $(MessageContainer).append('<span class="chat-message">' + ParsedMessage.MessageText + '</span>')
     // Check if the message was sent by you
     if (ParsedMessage.Name === userName) {
       $(MessageContainer).css('background', settings.userBackground);
+      // Empty it to start working on it
     }
     // Check if you were mentioned
     if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
