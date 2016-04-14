@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.87
+// @version      0.89
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -119,58 +119,6 @@ var settings = Settings.load();
 Settings.addBool(1, "useAlerts", "Alert when out of work", false);
 Settings.addBool(2, "allowTabCycling", "Change channels with tab", false);
 
-// select the target node
-var target = document.querySelector('#ChatLog');
-
-// create an observer instance
-var observer = new MutationObserver(function(mutations) {
-  mutations.forEach(function(mutation, i) {
-    var messageContainer = $(mutation.addedNodes[0]);
-    var message = mutation.addedNodes[i].innerText;
-    // Check if its a log
-    if (message) {
-      var message_isLog = message.split(']')[1][0] === '[' ? false : true;
-    }
-    // If it isn't, then parse it
-    if (!message_isLog && message) {
-      var message_timeStamp = message.split(']')[0].substring(1);
-      var message_Name = message.split(']')[2].substring(1).split(':')[0];
-      // Handle the message text itself
-      var message_Text_Array = message.split(':');
-      var message_Text = '';
-      if (message_Text_Array.length > 2) {
-        for (var i = 0; i < message_Text_Array.length; i++) {
-          if (i < 2) {
-            // do nothing
-          } else if (i > 2) {
-            // Prepend with : since it got cut out
-            message_Text += ":" + message_Text_Array[i];
-          } else {
-            // Just show it like normal since it's the first part of the message_Text
-            message_Text = message_Text_Array[i].substring(1);
-          }
-        }
-      }
-      if (message_Name === userName) {
-        // If it was sent by you, add a background
-        messageContainer.css('background', '#ddd');
-      }
-      if (message_Text.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
-          messageContainer.css('background','#FFA27F');
-          messageContainer.css('width', '100%');
-          // Play sound
-          userIsMentioned = true;
-      }
-      console.log("Time: " + message_timeStamp + ", Name: " + message_Name + ", Text: " + message_Text);
-      console.log(mutation);
-    }
-    messageContainer.css('width', '100%');
-  });
-});
-
-// configuration of the observer:
-var config = { attributes: true, childList: true, characterData: true };
-
 // Setup the username
 var userName = '';
 var getUsername = function() {
@@ -179,7 +127,7 @@ var getUsername = function() {
     setTimeout(getUsername, 100);
   } else {
     // When the name has been stored, start the chat observer
-    observer.observe(target, config);
+    observer.observe(ChatBox, config);
   }
 }
 // Give it 100 ms to load
@@ -263,7 +211,127 @@ setTimeout(getUsername, 100);
     UpdateTitle();
     }, 1000);
 
-/* Handle chat tabs */
+/* CHAT METHODS AND LOGIC GO HERE */
+
+var ParseChat = function(MessageContainer) {
+  var Message = MessageContainer.text();
+  var Message_timeStamp;
+  var Message_Name;
+  var Message_Title;
+  var Message_Title_Color;
+  var Message_Text_Array;
+  var Message_Text;
+  var Message_isLog = false;
+  var Message_isLineBreak = false;
+  if (MessageContainer) {
+    // Make sure the container exists first
+    // Pass over quickly
+    if (Message) {
+      // Check if its a br element
+      Message_isLineBreak = MessageContainer.prop('nodeName') === 'BR' ? true : false;
+
+      if (!Message_isLineBreak) {
+        // Double check
+        Message_isLineBreak = Message.length > 5 ? false : true;
+      }
+      // Check if the message is a log or not
+      if (!Message_isLineBreak) {
+        Message_isLog = Message.split(']')[1][0] === '[' ? false : true;
+      }
+    }
+
+    // If it's not a log or line break, then parse:
+    if (!Message_isLog && !Message_isLineBreak) {
+      // Get the timestamp
+      Message_timeStamp = Message.split(']')[0].substring(1);
+
+      // Get the person sending the message
+      Message_Name = Message.split(']')[2].substring(1).split(':')[0];
+
+      // Get the users title
+      Message_Title = Message.split(' ')[0].substring(7);
+      // Get the users title colour
+      // TODO: Get this into 1 line
+      var Title_Color_Holder = $(MessageContainer).children().children()[0];
+      Message_Title_Color = $(Title_Color_Holder).css('color');
+
+      // Parse the message itself
+      Message_Text_Array = Message.split(':');
+      // If there's more than the default amount of :'s then that means a user sent 1
+      if (Message_Text_Array.length > 2) {
+        // Loop through each element in the array
+        for (var i = 0; i < Message_Text_Array.length; i++) {
+          if (i < 2) {
+            // This is the stuff we don't want
+          } else if (i > 2) {
+            // This is what the user sent that got cut out; so add a :
+            Message_Text += ":" + Message_Text_Array[i];
+            // Can use += since it'll always be after the normal message
+          } else {
+            // The first part of the message
+            Message_Text = Message_Text_Array[i].substring(1);
+          }
+        }
+      }
+
+      // Now we have to put all this new info into an object
+      var ReturnValue = {Raw: Message, TimeStamp: Message_timeStamp, Name: Message_Name, MessageText: Message_Text, MessageTitle: Message_Title, MessageTitleColor: Message_Title_Color};
+      return ReturnValue;
+    } else if (Message_isLog) {
+      // If its a log, just mark it as 1 and return it as it is
+      return {MessageText: Message_Text, isLog: true};
+    } else {
+      // Just mark it as a line break
+      return {isLineBreak: true};
+    }
+  } else {
+    return {noContainer: true};
+  }
+};
+
+// Observer starts in GetUsername()
+var ChatBox = document.querySelector('#ChatLog');
+
+var ChatMutationHandler = function(mutations) {
+  mutations.forEach(function(mutation, i) {
+      var messageContainer = $(mutation.addedNodes[i]);
+      var message = mutation.addedNodes[i].innerText;
+
+      var ParsedMessage = ParseChat(messageContainer);
+
+      if (ParsedMessage.noContainer) {
+        // Nothing to do
+      } else if (ParsedMessage.isLineBreak) {
+        // Do nothing
+      } else if (ParsedMessage.isLog) {
+        console.log("Log: " + ParsedMessage.MessageText);
+      } else {
+        // Check if the message was sent by you
+        if (ParsedMessage.Name === userName) {
+          messageContainer.css('background', '#ddd');
+        }
+        // Check if you were mentioned
+        if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
+          messageContainer.css('background','#FFA27F');
+          messageContainer.css('width', '100%');
+        }
+
+        messageContainer.css('width', '100%');
+        console.log(ParsedMessage);
+      }
+  });
+};
+
+// create an observer instance
+var observer = new MutationObserver(ChatMutationHandler);
+
+// configuration of the observer:
+var config = { attributes: true, childList: true, characterData: true };
+
+var ChatChange = function() {
+  // Maybe going to need to set timeout
+}
+
     var TabContainer = $('.Tabs>ul');
     var tabAmount = $('.Tabs>ul').children().size();
     var selectedTab = 1;
