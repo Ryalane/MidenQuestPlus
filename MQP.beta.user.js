@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.91
+// @version      0.92
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -106,7 +106,29 @@ var Settings = {
   },
 
   addInput: function addInputSetting(container, name, description, defaultSetting, callback) {
+    defaultSetting = settings[name] || defaultSetting;
+    var AppendTo = '';
 
+    if (container === 1) {
+      AppendTo = $('#Custom_MainBar_Box_Workload');
+    } else if (container === 2) {
+      AppendTo = $('#Custom_MainBar_Box_Chat');
+    } else if (container === 3) {
+      AppendTo = $('#Custom_MainBar_Box_Reserved');
+    }
+
+    $(AppendTo).append('<div><label>' + description + '</label><input type="text" name="setting-' + name + '"></div>');
+    $("input[name='setting-" + name + "']").prop("defaultValue", defaultSetting)
+        .on("change", function() {
+
+            settings[name] = String($(this).val());
+            Settings.save(settings);
+
+            if(callback) {
+                callback();
+            }
+    });
+    settings[name] = defaultSetting;
   },
 
   addButton: function(appendToID, newButtonID, description, callback, options) {
@@ -118,21 +140,8 @@ Settings.setupUI();
 var settings = Settings.load();
 Settings.addBool(1, "useAlerts", "Alert when out of work", false);
 Settings.addBool(2, "allowTabCycling", "Change channels with tab", false);
-
-// Setup the username
-var userName = '';
-var getUsername = function() {
-  userName = $('#SideName').text();
-  if (userName === '???' || userName === '') {
-    setTimeout(getUsername, 100);
-  } else {
-    // When the name has been stored, start the chat observer
-    observer.observe(ChatBox, config);
-  }
-}
-// Give it 100 ms to load
-setTimeout(getUsername, 100);
-
+Settings.addInput(2, "userBackground", "User Backround Colour", "#DDD");
+Settings.addInput(2, "mentionBackground", "Mention Background Colour", "#FFA27F");
 
 // Settings Used
 // Workload_useAlerts = true/false
@@ -324,8 +333,21 @@ var ChatChange = function() {
       }
     }
       observer.observe(ChatBox, config);
-  }, 100);
+  }, 200);
 };
+
+// Setup the username
+var userName = '';
+var getUsername = function() {
+  userName = $('#SideName').text();
+  if (userName === '???' || userName === '') {
+    setTimeout(getUsername, 250);
+  } else {
+    observer.observe(ChatBox, config)
+  }
+}
+// Give it 100 ms to load
+setTimeout(getUsername, 250);
 
 var HandleChat = function(MessageContainer) {
   var ParsedMessage = ParseChat(MessageContainer);
@@ -333,17 +355,17 @@ var HandleChat = function(MessageContainer) {
   if (ParsedMessage.noContainer) {
     // Nothing to do
   } else if (ParsedMessage.isLineBreak) {
-    // Do nothing
+    $(MessageContainer).remove();
   } else if (ParsedMessage.isLog) {
     // Log
   } else {
     // Check if the message was sent by you
     if (ParsedMessage.Name === userName) {
-      $(MessageContainer).css('background', '#ddd');
+      $(MessageContainer).css('background', settings.userBackground);
     }
     // Check if you were mentioned
     if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
-      $(MessageContainer).css('background','#FFA27F');
+      $(MessageContainer).css('background', settings.mentionBackground);
       $(MessageContainer).css('width', '100%');
     }
 
