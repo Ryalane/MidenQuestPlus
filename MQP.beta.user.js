@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.971
+// @version      0.97
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
-// @match        www.midenquest.com/Game.aspx
+// @match        http://www.midenquest.com/Game.aspx
 // @resource     MainStylesheet https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/style.css
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
