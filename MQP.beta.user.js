@@ -422,7 +422,6 @@ var HandleChat = function(MessageContainer) {
     });
 })();
 
-
 /*TODO:
 *
 * Allow custom chat mention phrases
