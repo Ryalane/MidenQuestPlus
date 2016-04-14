@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.95
+// @version      0.96
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -233,25 +233,26 @@ var ParseChat = function(MessageContainer) {
   var Message_Link;
   var Message_isLog = false;
   var Message_isLineBreak = false;
+  var Message_isChatRemade = false;
   if (MessageContainer) {
     // Make sure the container exists first
     Message = $(MessageContainer).text();
-    console.log("Before checks: " + $(MessageContainer).prop('nodeName'));
     // Pass over quickly
     if (Message) {
       // Check if its a br element
       Message_isLineBreak = $(MessageContainer).prop('nodeName').toLowerCase() == 'br' ? true : false;
-      console.log(Message_isLineBreak);
 
       if (!Message_isLineBreak) {
         // Double check
         Message_isLineBreak = Message.length > 5 ? false : true;
       }
         Message_isLog = Message.split(']')[1][0] === '[' ? false : true;
+
+        Message_isChatRemade = $(MessageContainer).attr('new');
     }
 
-    // If it's not a log or line break, then parse:
-    if (!Message_isLog && !Message_isLineBreak && Message) {
+    // If it's not a log or line break, and its unparsed, then parse:
+    if (!Message_isLog && !Message_isLineBreak && Message && !Message_isChatRemade) {
       // Get the timestamp
       Message_timeStamp = Message.split(']')[0].substring(1);
       console.log(Message_timeStamp);
@@ -296,6 +297,8 @@ var ParseChat = function(MessageContainer) {
     } else if (Message_isLog) {
       // If its a log, just mark it as 1 and return it as it is
       return {MessageText: Message_Text, isLog: true};
+    } else if (Message_isChatRemade) {
+      return {isParsed: true};
     } else {
       // Just mark it as a line break
       return {isLineBreak: true};
@@ -361,8 +364,11 @@ var HandleChat = function(MessageContainer) {
     $(MessageContainer).remove();
   } else if (ParsedMessage.isLog) {
     // Log
+  } else if (ParsedMessage.isParsed) {
+
   } else {
     $(MessageContainer).empty();
+    $(MessageContainer).attr('new', 'true'); // used to check if the parser should use the new 1 or the old 1
     $(MessageContainer).append('<span class="chat-timestamp">' + '[' + ParsedMessage.TimeStamp + ']' + '</span>');
     //.text(ParsedMessage.TimeStamp);
     $(MessageContainer).append('<span onclick="' + ParsedMessage.MessageLink + '" class="chat-title" style="color: ' + ParsedMessage.MessageTitleColor + '">' + '[' + ParsedMessage.MessageTitle + '] ' + '</span>');
@@ -443,4 +449,6 @@ var HandleChat = function(MessageContainer) {
 * Clean up the chat everytime it's changed or restarted
 *
 * Use an observer for the workload (.prgActionOverlay)
+*
+* Parse through remade chat too
 */
