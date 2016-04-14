@@ -15,3 +15,15 @@ You can view the source code or contribute at:
 https://github.com/Ryalane/MidenQuestPlus
 
 Feature Requests, Bug Reports, Questions, and Discussion: Message me in game, or on reddit: Ryalane
+
+# Beta features
+* Chat backgrounds for mentions and what you've said
+* Can customize the colours for chat backgrounds
+
+Link: https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MQP.beta.user.js
+
+# TODO List
+* Fix chat backgrounds
+* Customize the chat completely
+* Allow coloured text in chat
+
