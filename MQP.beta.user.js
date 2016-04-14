@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.89
+// @version      0.90
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -214,7 +214,7 @@ setTimeout(getUsername, 100);
 /* CHAT METHODS AND LOGIC GO HERE */
 
 var ParseChat = function(MessageContainer) {
-  var Message = MessageContainer.text();
+  var Message;
   var Message_timeStamp;
   var Message_Name;
   var Message_Title;
@@ -225,6 +225,7 @@ var ParseChat = function(MessageContainer) {
   var Message_isLineBreak = false;
   if (MessageContainer) {
     // Make sure the container exists first
+    Message = MessageContainer.text();
     // Pass over quickly
     if (Message) {
       // Check if its a br element
@@ -244,7 +245,6 @@ var ParseChat = function(MessageContainer) {
     if (!Message_isLog && !Message_isLineBreak) {
       // Get the timestamp
       Message_timeStamp = Message.split(']')[0].substring(1);
-
       // Get the person sending the message
       Message_Name = Message.split(']')[2].substring(1).split(':')[0];
 
@@ -293,9 +293,9 @@ var ParseChat = function(MessageContainer) {
 var ChatBox = document.querySelector('#ChatLog');
 
 var ChatMutationHandler = function(mutations) {
+  console.log("Observer on");
   mutations.forEach(function(mutation, i) {
       var messageContainer = $(mutation.addedNodes[i]);
-      var message = mutation.addedNodes[i].innerText;
 
       var ParsedMessage = ParseChat(messageContainer);
 
@@ -304,7 +304,7 @@ var ChatMutationHandler = function(mutations) {
       } else if (ParsedMessage.isLineBreak) {
         // Do nothing
       } else if (ParsedMessage.isLog) {
-        console.log("Log: " + ParsedMessage.MessageText);
+        // Log
       } else {
         // Check if the message was sent by you
         if (ParsedMessage.Name === userName) {
@@ -317,7 +317,6 @@ var ChatMutationHandler = function(mutations) {
         }
 
         messageContainer.css('width', '100%');
-        console.log(ParsedMessage);
       }
   });
 };
@@ -330,6 +329,44 @@ var config = { attributes: true, childList: true, characterData: true };
 
 var ChatChange = function() {
   // Maybe going to need to set timeout
+  console.log("ChatChange");
+  observer.disconnect();
+  setTimeout(function() {
+    var Messages = $('#ChatLog').children();
+    console.log("Messages: " + Messages.first());
+    for (var i = 0; i < Messages.length; i++) {
+      // Go through every child, including line breaks
+      var CurrentMessage = $(Messages)[i];
+      if ( $(CurrentMessage).prop('nodeName') === 'BR' ) {
+        // If it's a BR, then let's just delete it.
+        $(CurrentMessage).remove();
+      } else {
+        // If it isn't a BR, then let's get the info from it, and remake it.
+        var ParsedMessage = ParseChat($(CurrentMessage));
+
+        if (ParsedMessage.noContainer) {
+          // Nothing to do
+        } else if (ParsedMessage.isLineBreak) {
+          // Do nothing
+        } else if (ParsedMessage.isLog) {
+          // Just the log
+        } else {
+          // Check if the message was sent by you
+          if (ParsedMessage.Name === userName) {
+            $(CurrentMessage).css('background', '#ddd');
+          }
+          // Check if you were mentioned
+          if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
+            $(CurrentMessage).css('background','#FFA27F');
+            $(CurrentMessage).css('width', '100%');
+          }
+
+          $(CurrentMessage).css('width', '100%');
+        }
+      }
+    }
+      observer.observe(ChatBox, config);
+  }, 100);
 }
 
     var TabContainer = $('.Tabs>ul');
@@ -349,21 +386,22 @@ var ChatChange = function() {
         setTimeout(function () { ChangeChatChannel(selectedTab); }, 100);
     };
 
-    // Set the tab to #1 just in case
-    setTimeout(function () { ChangeChatChannel(1); }, 1000);
-
     // Handle Chat tab clicking
     $('#ChatCh1').click(function () {
       selectedTab = 1;
+      ChatChange();
     });
     $('#ChatCh2').click(function () {
       selectedTab = 2;
+      ChatChange();
     });
     $('#ChatCh3').click(function () {
       selectedTab = 3;
+      ChatChange();
     });
     $('#ChatCh4').click(function () {
       selectedTab = 4;
+      ChatChange();
     });
 
     // Setup the key events
@@ -379,3 +417,13 @@ var ChatChange = function() {
         }
     });
 })();
+
+
+/*TODO:
+*
+* Allow custom chat mention phrases
+* Allow for user background and mention background customization
+*
+* Clean up the chat everytime it's changed or restarted
+*
+*/
