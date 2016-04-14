@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuestPlus
 // @namespace    MidenQuestPlus_tampermonkey
-// @version      0.90
+// @version      0.91
 // @description  Provides the user with some enhancements to MidenQuest
 // @author       Ryalane
 // @updateURL    https://github.com/Ryalane/MidenQuestPlus/raw/master/MQP.user.js
@@ -225,26 +225,27 @@ var ParseChat = function(MessageContainer) {
   var Message_isLineBreak = false;
   if (MessageContainer) {
     // Make sure the container exists first
-    Message = MessageContainer.text();
+    Message = $(MessageContainer).text();
+    console.log("Before checks: " + $(MessageContainer).prop('nodeName'));
     // Pass over quickly
     if (Message) {
       // Check if its a br element
-      Message_isLineBreak = MessageContainer.prop('nodeName') === 'BR' ? true : false;
+      Message_isLineBreak = $(MessageContainer).prop('nodeName').toLowerCase() == 'br' ? true : false;
+      console.log(Message_isLineBreak);
 
       if (!Message_isLineBreak) {
         // Double check
         Message_isLineBreak = Message.length > 5 ? false : true;
       }
-      // Check if the message is a log or not
-      if (!Message_isLineBreak) {
         Message_isLog = Message.split(']')[1][0] === '[' ? false : true;
-      }
     }
 
     // If it's not a log or line break, then parse:
-    if (!Message_isLog && !Message_isLineBreak) {
+    if (!Message_isLog && !Message_isLineBreak && Message) {
       // Get the timestamp
       Message_timeStamp = Message.split(']')[0].substring(1);
+      console.log(Message_timeStamp);
+      console.log(Message);
       // Get the person sending the message
       Message_Name = Message.split(']')[2].substring(1).split(':')[0];
 
@@ -295,28 +296,10 @@ var ChatBox = document.querySelector('#ChatLog');
 var ChatMutationHandler = function(mutations) {
   console.log("Observer on");
   mutations.forEach(function(mutation, i) {
-      var messageContainer = $(mutation.addedNodes[i]);
+      var CurrentMessage = $(mutation.addedNodes[i]);
 
-      var ParsedMessage = ParseChat(messageContainer);
-
-      if (ParsedMessage.noContainer) {
-        // Nothing to do
-      } else if (ParsedMessage.isLineBreak) {
-        // Do nothing
-      } else if (ParsedMessage.isLog) {
-        // Log
-      } else {
-        // Check if the message was sent by you
-        if (ParsedMessage.Name === userName) {
-          messageContainer.css('background', '#ddd');
-        }
-        // Check if you were mentioned
-        if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
-          messageContainer.css('background','#FFA27F');
-          messageContainer.css('width', '100%');
-        }
-
-        messageContainer.css('width', '100%');
+      if (CurrentMessage) {
+        HandleChat(CurrentMessage);
       }
   });
 };
@@ -333,41 +316,40 @@ var ChatChange = function() {
   observer.disconnect();
   setTimeout(function() {
     var Messages = $('#ChatLog').children();
-    console.log("Messages: " + Messages.first());
     for (var i = 0; i < Messages.length; i++) {
       // Go through every child, including line breaks
       var CurrentMessage = $(Messages)[i];
-      if ( $(CurrentMessage).prop('nodeName') === 'BR' ) {
-        // If it's a BR, then let's just delete it.
-        $(CurrentMessage).remove();
-      } else {
-        // If it isn't a BR, then let's get the info from it, and remake it.
-        var ParsedMessage = ParseChat($(CurrentMessage));
-
-        if (ParsedMessage.noContainer) {
-          // Nothing to do
-        } else if (ParsedMessage.isLineBreak) {
-          // Do nothing
-        } else if (ParsedMessage.isLog) {
-          // Just the log
-        } else {
-          // Check if the message was sent by you
-          if (ParsedMessage.Name === userName) {
-            $(CurrentMessage).css('background', '#ddd');
-          }
-          // Check if you were mentioned
-          if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
-            $(CurrentMessage).css('background','#FFA27F');
-            $(CurrentMessage).css('width', '100%');
-          }
-
-          $(CurrentMessage).css('width', '100%');
-        }
+      if (CurrentMessage) {
+        HandleChat(CurrentMessage);
       }
     }
       observer.observe(ChatBox, config);
   }, 100);
-}
+};
+
+var HandleChat = function(MessageContainer) {
+  var ParsedMessage = ParseChat(MessageContainer);
+
+  if (ParsedMessage.noContainer) {
+    // Nothing to do
+  } else if (ParsedMessage.isLineBreak) {
+    // Do nothing
+  } else if (ParsedMessage.isLog) {
+    // Log
+  } else {
+    // Check if the message was sent by you
+    if (ParsedMessage.Name === userName) {
+      $(MessageContainer).css('background', '#ddd');
+    }
+    // Check if you were mentioned
+    if (ParsedMessage.MessageText.toLowerCase().indexOf(userName.toLowerCase()) !== -1) {
+      $(MessageContainer).css('background','#FFA27F');
+      $(MessageContainer).css('width', '100%');
+    }
+
+    $(MessageContainer).css('width', '100%');
+  }
+};
 
     var TabContainer = $('.Tabs>ul');
     var tabAmount = $('.Tabs>ul').children().size();
@@ -426,4 +408,5 @@ var ChatChange = function() {
 *
 * Clean up the chat everytime it's changed or restarted
 *
+* Use an observer for the workload (.prgActionOverlay)
 */
