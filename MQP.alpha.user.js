@@ -145,115 +145,107 @@ Settings.addBool(2, "allowTabCycling", "Change channels with tab", false);
 Settings.addInput(2, "userBackground", "User Backround Colour", "rgba(0, 180, 180, 0.2)");
 Settings.addInput(2, "mentionBackground", "Mention Background Colour", "rgba(255, 165, 50, 0.5)");
 
+
+
 // Settings Used
 // Workload_useAlerts = true/false
 // Chat_AllowTabCycling = true/false
 
-/* Modify the title of the page */
-    var doneAlerting = false;
-    var Production = '';
-    var ProductionTitle = '';
-    var isWorking = false;
+var ServerMessages = ServerMessages || {};
 
-    var MaxWorkload = 0;
-    var CurWorkLoad = 0;
+ServerMessages.CD = function(t_Remaining, t_Total, Workload) {
+  this.TimeRemaining = t_Remaining;
+  this.TimeTotal = t_Total;
+  this.WorkloadString = Workload;
+}
 
-    var StopWorkButton = $('#workloadStopButton');
+ServerMessages.Message = function() {
 
-    var CheckWork = function() {
-      Production = $('.prgActionOverlay').text();
-      if (Production[0] === 'S') {
-        isWorking = true;
-        ProductionTitle = 'Selling';
-      } else if (Production[0] === 'M') {
-        isWorking = true;
-        ProductionTitle = 'Mining';
-      } else if (Production[0] === 'G') {
-        isWorking = true;
-        ProductionTitle = 'Gathering';
-      } else if (Production[0] === 'L') {
-        isWorking = true;
-        ProductionTitle = 'Cutting';
-      } else if (Production[0] === 'F') {
-        isWorking = true;
-        ProductionTitle = 'Fishing';
-      } else {
-        isWorking = false;
-      }
+}
 
-      // After the check, update the current/max workload
-      if (isWorking) {
-        var tempWorkload = Production.split(' ')[1].split('/');
-        CurWorkLoad = tempWorkload[0];
-        MaxWorkload = tempWorkload[1];
-          if (doneAlerting) {
-              doneAlerting = false;
-          }
-      }
-    };
+var ServerMessage = {
+  Data: "",
+  Options: {CD:               "SETCD",
+            ChatNotification: "CHATNOTIF",
+            LoadLog:          "LOGSTART",
+            Log:              "NLOG",
+            Location:         "SETLOC",
+            Message:          "CHATNEW",
+            ChatStarted:      "CHATSTART",
+            Channel:          "CHANNEL",
+            Timer:            "TIMER",
+            LoadPage:         "LOADPAGE",
+            TSData:           "TSLVL",
+            Ore:              "SETORE",},
 
-    // Little helper method for setting the title
-    var UpdateTitle = function() {
-      var title = '';
+  getOption: function(data) {
+    this.Data = data;
+    var Command = this.Data.split('|')[0];
 
-      if (isWorking) {
-        title = ProductionTitle + ' ' + CurWorkLoad + ' / ' + MaxWorkload;
-      } else {
-        if (ProductionTitle) {
-            if (settings.useAlerts && !doneAlerting) {
-
-                alert(ProductionTitle + ' has stopped');
-                doneAlerting = true;
-            } else {
-                title = ProductionTitle + ' has stopped';
-            }
-        } else {
-          title = 'MidenQuest Online';
+    var OptionSize = Object.keys(this.Options).length;
+    for (var i = 0; i < OptionSize; i++) {
+      var key = Object.keys(this.Options)[i];
+      var value = this.Options[key];
+      if (value === Command) {
+        // If the value is a known command, then get the parser up
+        //TODO: Intercept ONLY messages
+        switch (key) {
+          case "CD":
+            this.ParseCD();
+          break;
+          case "Message":
+            this.ParseMessage();
+          break;
+          case "ChatStarted":
+            //this.ParseMessage();
+          break;
         }
       }
+    }
+  },
 
-      document.title = title;
-    };
+  ParseCD: function() {
+    var splitData = this.Data.split('|');
+    var TimeRemaining = splitData[1];
+    var TotalTime = splitData[2];
+    var WorkloadString = splitData[3];
 
-    // Check what the title should be and then update it
+    console.log(WorkloadString);
+  },
+  ParseMessage: function() {
+    var splitData = this.Data.split('|');
+    // Not checking for any other pipes because it doesnt show anyways
+    splitData.shift();
+    // Setup variables
+    var Message = splitData;
+    var Message_timeStamp;
+    var Message_Name;
+    var Message_Title;
+    var Message_Title_Color;
+    var Message_Text_Array;
+    var Message_Text;
+    var Message_Link;
 
-    var titlething = setInterval(function () {
-    CheckWork();
-    UpdateTitle();
-    }, 1000);
+    // Check just to make sure the message isn't empty
+    if (Message) {
+      var CharLink = $(Message).find('.CharLink');
+      console.log("Test: " + $(CharLink).text());
+
+    }
+
+    // End ParseMessage
+  }
+};
+
+function onmsg(evt) {
+ServerReceptionHandler(evt.data);
+ServerMessage.getOption(evt.data);
+};
+// Start watching incoming messages
+ws.onmessage=onmsg;
+
 
 /* CHAT METHODS AND LOGIC GO HERE */
-
-var protos = document.body.constructor === window.HTMLBodyElement;
-var validHTMLTags  =/^(?:a|abbr|acronym|address|applet|area|article|aside|audio|b|base|basefont|bdi|bdo|bgsound|big|blink|blockquote|body|br|button|canvas|caption|center|cite|code|col|colgroup|data|datalist|dd|del|details|dfn|dir|div|dl|dt|em|embed|fieldset|figcaption|figure|font|footer|form|frame|frameset|h1|h2|h3|h4|h5|h6|head|header|hgroup|hr|html|i|iframe|img|input|ins|isindex|kbd|keygen|label|legend|li|link|listing|main|map|mark|marquee|menu|menuitem|meta|meter|nav|nobr|noframes|noscript|object|ol|optgroup|option|output|p|param|plaintext|pre|progress|q|rp|rt|ruby|s|samp|script|section|select|small|source|spacer|span|strike|strong|style|sub|summary|sup|table|tbody|td|textarea|tfoot|th|thead|time|title|tr|track|tt|u|ul|var|video|wbr|xmp)$/i;
-
-function sanitize(txt) {
-    var // This regex normalises anything between quotes
-        normaliseQuotes = /=(["'])(?=[^\1]*[<>])[^\1]*\1/g,
-        normaliseFn = function ($0, q, sym) {
-            return $0.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        },
-        replaceInvalid = function ($0, tag, off, txt) {
-            var
-                // Is it a valid tag?
-                invalidTag = protos &&
-                    document.createElement(tag) instanceof HTMLUnknownElement
-                    || !validHTMLTags.test(tag),
-
-                // Is the tag complete?
-                isComplete = txt.slice(off+1).search(/^[^<]+>/) > -1;
-
-            return invalidTag || !isComplete ? '&lt;' + tag : $0;
-        };
-
-    txt = txt.replace(normaliseQuotes, normaliseFn)
-             .replace(/<(\w+)/g, replaceInvalid);
-
-    var tmp = document.createElement("DIV");
-    tmp.innerHTML = txt;
-
-    return "textContent" in tmp ? tmp.textContent : tmp.innerHTML;
-}
 
 var ParseChat = function(MessageContainer) {
   var Message;
@@ -339,28 +331,6 @@ var ParseChat = function(MessageContainer) {
   }
 };
 
-// Observer starts in GetUsername()
-var ChatBox = document.querySelector('#ChatLog');
-
-var ChatMutationHandler = function(mutations) {
-  if (mutations[0].addedNodes) {
-      var ChangedNodes = mutations[0].addedNodes;
-      Array.prototype.forEach.call(ChangedNodes, function(mutation, i) {
-          var CurrentMessage = $(mutation);
-          //console.log(CurrentMessage);
-          HandleChat(CurrentMessage);
-      });
-  } else {
-    //console.log(mutations);
-  }
-};
-
-// create an observer instance
-var observer = new MutationObserver(ChatMutationHandler);
-
-// configuration of the observer:
-var config = { attributes: true, childList: true, characterData: true };
-
 // Setup the username
 var userName = '';
 var getUsername = function() {
@@ -368,8 +338,6 @@ var getUsername = function() {
   if (userName === '???') {
     setTimeout(getUsername, 100);
   } else {
-    observer.observe(ChatBox, config);
-    $(ChatBox).prepend('<div id="chatShout1" style="background-color: rgb(0,155,155)" new="true"><span class="chat-timestamp"></span><span class="chat-title" style="color: rgb(155, 50, 50)">[MQ+] </span><span class="chat-name">MidenQuest+: </span><span class="chat-message">MidenQuest+ Chat Loaded</span></div>');
     Settings.addInput(2, "mentionTriggers", "Words that you want to mention", userName);
   }
 }
