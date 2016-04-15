@@ -151,6 +151,10 @@ ServerMessages.getOption = function(data) {
     if (value === Command) {
       // If the value is a known command, then get the parser up
       //TODO: Intercept ONLY messages
+      if (key !== "Message" && key !== "ChatStarted") {
+        ServerReceptionHandler(data);
+      }
+
       if (key === "Message") {
         this.ParseMessage(data);
       } else if (key === "ChatStarted") {
@@ -165,8 +169,6 @@ ServerMessages.getOption = function(data) {
           this.ParseMessage(tempMatch);
         }
 
-      } else {
-        ServerReceptionHandler(data);
       }
     }
   }
@@ -185,4 +187,5 @@ ws.onmessage=onmsg;
 * Make the chat tabs work
 * Fix any errors (Where the console log is mostly)
 * Integrate the script into here/vice versa
+* Make a ChatManager namespace and put send/delete messages in there as well as tabs
 */
