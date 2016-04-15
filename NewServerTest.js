@@ -221,19 +221,15 @@ _Page.SetupUI = function () {
                   "}" +
                   ".chat-timestamp {" +
                   "font-weight: normal;" +
-                  "font-size: 16px;" +
                   "}" +
                   ".chat-title {" +
                   "font-weight: bold;" +
-                  "font-size: 16px;" +
                   "}" +
                   ".chat-name {" +
                   "font-weight: bold;" +
-                  "font-size: 16px;" +
                   "}" +
                   ".chat-message {" +
                   "font-weight: normal;" +
-                  "font-size: 16px;" +
                   "}" +
                   ".chat-shout:nth-child(even) {" +
                   "background: #FFF;" +
@@ -243,11 +239,18 @@ _Page.SetupUI = function () {
                   "}" +
                   ".chat-shout {" +
                   "padding: 2px;" +
+                  "font-size: 16px;" +
+                  "}" +
+                  ".chat-notification {" +
+                  "font-size: 20px;" +
+                  "font-weight: bold;" +
+                  "color: #01AAFF;" +
                   "}"
   );
 
   _Page.AddBool('#Custom_MainBar_Box_Chat', "allowTabCycling", "Change channels with tab", false);
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'MaxChatHistory', "Max Chat History", 50);
+  _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionTriggers', 'Mention Keywords', 'Username');
 }(); // Auto runs
 
 /**********************************
@@ -370,7 +373,7 @@ _Chat.ParseMessage = function (Message) {
     var chatText = $($(Message)[0]).text();
     var linkElement = $(Message)[0].children[0].children[0];
 
-    if (chatText.split(']').length !== 3) {
+    if (chatText.split(']').length < 3) {
       // It's a notification
       //split('[')[1].split(']'); 0 = time, 1 = name + message
       MessageTimestamp = chatText.split('[')[1].split(']')[0];
@@ -381,15 +384,43 @@ _Chat.ParseMessage = function (Message) {
     } else {
       MessageTimestamp = chatText.split('[')[1].slice(0,-1);
       MessageTitleText = chatText.split(']')[1].substring(1);
-      MessageUsername = chatText.split(' ')[1].slice(0,-1);
-      tempText = chatText.split(' ');
-      if (tempText.length > 3) {
-        tempText.shift(); // Get rid of the title + timestamp
-        tempText.shift(); // Get rid of the name
-        MessageText = tempText.join(' ');
+      MessageUserTemp = chatText.split(']')[2].substring(1);
+      MessageUsername = MessageUserTemp.split(':')[0];
+      ChatWithoutTitleandTime = chatText.split(']');
+      tempBracketText = chatText.split(']');
+      // If it's over 3 then the user sent a ] in there message.. go fix it
+      BracketFix = "";
+      if (tempBracketText.length > 3) {
+        tempBracketText.forEach(function (element, index) {
+          if (index < 2) {
+            // We don't need the first 2
+          } else if (index === 2) {
+            BracketFix = element.substring(1);
+          } else {
+            BracketFix += "]" + element;
+          }
+        });
       } else {
-        MessageText = tempText[2];
+        BracketFix = tempBracketText[2].substring(1);
       }
+
+      tempColonFix = BracketFix.split(':');
+      ColonFix = "";
+      if (tempColonFix.length > 2) {
+        // Get rid of the name
+        tempColonFix.shift();
+        tempColonFix.forEach(function (element, index) {
+          if (index === 0 ) {
+            ColonFix = element.substring(1);
+          } else {
+            ColonFix += ":" + element;
+          }
+        });
+      } else {
+        tempColonFix.shift();
+        ColonFix = tempColonFix[0].substring(1);
+      }
+      MessageText = ColonFix;
 
       // Get the Title Color
       MessageTitleColor = $(linkElement).attr('style').substring(6);
