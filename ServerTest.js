@@ -97,7 +97,7 @@ ServerMessages.ParseMessage = function(data) {
     tempNameTitle = String(Message).match(regex_Name_and_Title)[1].split(' ');
     Message_Name = tempNameTitle[1];
     Message_Title = tempNameTitle[0].slice(0,-7);
-    Message_Link = String(Message).match(regex_Message_Link)[0];
+    Message_Link = String(Message).match(regex_Message_Link)[0].substring(9);
     Message_Title_Color = String(Message).match(regex_Title_Color)[2];
     Message_timeStamp = String(Message).match(regex_Time_Stamp)[3];
 
@@ -117,6 +117,7 @@ ServerMessages.PostToChatBox = function(Message) {
       $('#ChatLog').prepend(Message.Text);
     } else {
       var UniqueID = this.GenerateUniqueID(10);
+      console.log(Message.UserPage);
       var Timestamp = '<span class="chat-timestamp">' + Message.Timestamp + '</span>';
       var Title = '<span class="chat-title" onclick="' + Message.UserPage + '" style="color: ' + Message.Title.Color + '">' + Message.Title.Text + ' </span>';
       var Name = '<span class="chat-name" onclick="' + Message.UserPage + '">' + Message.Username + ': </span>';
