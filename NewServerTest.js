@@ -1,10 +1,134 @@
 /**********************************
 **                               **
+**       Settings Handling       **
+**                               **
+**********************************/
+
+var _Setting = _Setting || {};
+
+/**
+  * Retrieves the settings from the LocalStorage
+  * @return {String} Settings
+  */
+_Setting.Load = function () {
+  var setting = localStorage.getItem('MidenQuestPlus-settings');
+
+  try {
+    setting = setting ? JSON.parse(setting) : {};
+  } catch(e) {}
+
+  setting = setting || {};
+
+  return setting;
+};
+
+/**
+  * Saves the settings to the LocalStorage
+  * @return {Void}
+  */
+_Setting.Save = function () {
+  localStorage.setItem('MidenQuestPlus-settings', JSON.stringify(_Setting.settings));
+};
+
+_Setting.settings = _Setting.Load();
+
+/**********************************
+**                               **
 **          Page Settings        **
 **                               **
 **********************************/
 
 var _Page = _Page || {};
+
+/**
+  * Creates a Checkbox
+  * @param {DomElement} a_Container
+  * @param {String} a_Name
+  * @param {String} a_Description
+  * @param {String} a_DefaultSetting
+  * @param {Function} a_callback
+  * @return {Void}
+  */
+_Page.AddBool = function (a_Container, a_Name, a_Description, a_DefaultSetting, a_Callback) {
+  defaultSetting = _Setting.settings[a_Name] || a_DefaultSetting;
+
+  var AppendTo = $(a_Container);
+
+  $(AppendTo).append('<div><label><input type="checkbox" name="setting-' + a_Name + '"' + (a_DefaultSetting ? ' checked' : '') + '>' + a_Description + '</label></div>');
+          $("input[name='setting-" + a_Name + "']").change(function() {
+              _Setting.settings[a_Name] = !_Setting.settings[a_Name];
+              _Setting.Save(_Setting.settings);
+
+              if(a_Callback) {
+                  callback();
+              }
+          });
+          if (_Setting.settings[a_Name] !== undefined) {
+              $("input[name='setting-" + a_Name + "']").prop("checked", _Setting.settings[a_Name]);
+          } else {
+              _Setting.settings[a_Name] = defaultSetting;
+          }
+};
+
+/**
+  * Creates a Radio button
+  * @return {Void}
+  */
+_Page.AddRadio = function () {
+
+};
+
+/**
+  * Creates an Input box
+  * @return {Void}
+  */
+_Page.AddInput = function () {
+
+};
+
+/**
+  * Creates a Button
+  * @return {Void}
+  */
+_Page.AddButton = function () {
+
+};
+
+/**
+  * Sets up the page
+  * @return {Void}
+  */
+_Page.SetupUI = function () {
+  // Make the container
+  $('body').prepend('<div id="Custom_MainBar"></div>');
+  // Set the title
+  $('#Custom_MainBar').append('<h1 id="Custom_MainBar_Title"></h1>');
+  $('#Custom_MainBar_Title').text('MidenQuest+ v0.1');
+  // Setup boxes
+  $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Workload" class="Custom_MainBar_Box"></div>');
+  $('#Custom_MainBar_Box_Workload').append('<h1>Workload Settings</h1>');
+  $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Chat" class="Custom_MainBar_Box"></div>');
+  $('#Custom_MainBar_Box_Chat').append('<h1>Chat Settings');
+  $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Reserved" class="Custom_MainBar_Box"></div>');
+  $('#Custom_MainBar_Box_Reserved').append('<h1>Reserved Settings');
+
+  // Match the navbar size
+  $('#MainPanel').css('width', '1002px');
+  $('#MainPanel').css('margin-top', '0px');
+  $('#MainPanel').css('height', '765px');
+
+  $('#ZoneContent').css('border-top-left-radius', '0px');
+  $('#ZoneContent').css('padding-top', '0px');
+  $('#TopScreen').css('padding-top', '0px');
+  $('#ZoneOptions').css('border-top-right-radius', '0px');
+  // Center the text a bit better
+  $('.prgActionOverlay').css('margin-top', '-19px');
+  // Footer settings
+  var footer = $('.aLink').parent();
+  $(footer).css('border-top', '0px');
+
+  _Page.AddBool('#Custom_MainBar_Box_Chat', "allowTabCycling", "Change channels with tab", false);
+}();
 
 /**
   * Adds a style to the head element
@@ -211,6 +335,8 @@ _Chat.SendMessage = function (Message) {
 
   if (ParsedMessage) {
 
+    // TODO: Use _Chat.RemoveMessage and fix logic
+    // Error: VM16740:295 Uncaught TypeError: Cannot read property 'remove' of undefined
     if ($('.chat-shout').length >= 49) {
         $('.chat-shout')[50].remove();
       //ChatIDNum = 0;
@@ -290,17 +416,6 @@ _Work.isWorking = function () {
 _Work.WorkType = function () {
 
 };
-
-
-/**********************************
-**                               **
-**       Settings Handling       **
-**                               **
-**********************************/
-
-var _Setting = _Setting|| {};
-
-_Setting.settings = '';
 
 
 /**********************************
