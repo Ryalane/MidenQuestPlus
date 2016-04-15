@@ -117,7 +117,6 @@ ServerMessages.PostToChatBox = function(Message) {
       $('#ChatLog').prepend(Message.Text);
     } else {
       var UniqueID = this.GenerateUniqueID(10);
-      console.log(Message.UserPage);
       var Timestamp = '<span class="chat-timestamp">' + Message.Timestamp + '</span>';
       var Title = '<span class="chat-title" onclick="' + Message.UserPage + '" style="color: ' + Message.Title.Color + '">' + Message.Title.Text + ' </span>';
       var Name = '<span class="chat-name" onclick="' + Message.UserPage + '">' + Message.Username + ': </span>';
