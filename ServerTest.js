@@ -95,6 +95,7 @@ ServerMessages.ParseMessage = function(data) {
     // Get the title colour
     Message_Text = String(Message).match(regex_Message_Text)[1].substring(3);
     tempNameTitle = String(Message).match(regex_Name_and_Title)[1].split(' ');
+    console.log(tempNameTitle);
     Message_Name = tempNameTitle[1];
     Message_Title = tempNameTitle[0].slice(0,-7);
     Message_Link = String(Message).match(regex_Message_Link)[0].substring(9);
@@ -107,7 +108,10 @@ ServerMessages.ParseMessage = function(data) {
   }
 }
 
+//OPENR|1|1 Gems
 /* LONG PARSE METHOD IS DONE */
+// Use this as the limit
+var ChatIDNum = 0;
 
 ServerMessages.PostToChatBox = function(Message) {
   // Check if the message is empty or null
@@ -116,16 +120,20 @@ ServerMessages.PostToChatBox = function(Message) {
     if (Message.isNotification) {
       $('#ChatLog').prepend(Message.Text);
     } else {
-      var UniqueID = this.GenerateUniqueID(10);
+      if ($('.chat-shout').length >= 49) {
+          $('.chat-shout')[50].remove();
+        //ChatIDNum = 0;
+      }
       var Timestamp = '<span class="chat-timestamp">' + Message.Timestamp + '</span>';
       var Title = '<span class="chat-title" onclick="' + Message.UserPage + '" style="color: ' + Message.Title.Color + '">' + Message.Title.Text + ' </span>';
       var Name = '<span class="chat-name" onclick="' + Message.UserPage + '">' + Message.Username + ': </span>';
       var MessageText = '<span class="chat-message">' + Message.Text + '</span>';
-      $('#ChatLog').prepend('<div class="chat-shout" id="' + UniqueID + '"></div>');
-      $('#' + UniqueID).append(Timestamp);
-      $('#' + UniqueID).append(Title);
-      $('#' + UniqueID).append(Name);
-      $('#' + UniqueID).append(MessageText);
+      $('#ChatLog').prepend('<div class="chat-shout" id="' + ChatIDNum + '"></div>');
+      $('#' + ChatIDNum).append(Timestamp);
+      $('#' + ChatIDNum).append(Title);
+      $('#' + ChatIDNum).append(Name);
+      $('#' + ChatIDNum).append(MessageText);
+      ChatIDNum++;
     }
   }
 
@@ -146,6 +154,8 @@ ServerMessages.getOption = function(data) {
       if (key === "Message") {
         this.ParseMessage(data);
       } else if (key === "ChatStarted") {
+        // Reset the chat ID nums
+        ChatIDNum = 0;
         // Loop through all the messages and parse them
         $('#ChatLog').empty();
         var tempregex = /<div id='chatShout1'>(.*?)<\/div>/g;
@@ -167,3 +177,12 @@ ServerMessages.getOption(evt.data);
 };
 // Start watching incoming messages
 ws.onmessage=onmsg;
+
+
+
+/* TODO:
+*
+* Make the chat tabs work
+* Fix any errors (Where the console log is mostly)
+* Integrate the script into here/vice versa
+*/
