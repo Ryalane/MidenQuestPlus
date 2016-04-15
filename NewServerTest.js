@@ -1,3 +1,29 @@
+/**
+  * Table of Contents
+  *
+  * Use Ctrl + F
+  *
+  * Settings:
+  *   Settings Handling
+  *
+  * Page:
+  *   Page Handling
+  *
+  * Server:
+  *   Server Messages
+  *
+  * Chat:
+  *   Chat Handling
+  *
+  * Work:
+  *   Work Handling
+  *
+  * DOM:
+  *   DOM Events
+  *
+  */
+
+
 /**********************************
 **                               **
 **       Settings Handling       **
@@ -34,7 +60,7 @@ _Setting.settings = _Setting.Load();
 
 /**********************************
 **                               **
-**          Page Settings        **
+**          Page Handling        **
 **                               **
 **********************************/
 
@@ -42,7 +68,7 @@ var _Page = _Page || {};
 
 /**
   * Creates a Checkbox
-  * @param {DomElement} a_Container
+  * @param {String} a_Container
   * @param {String} a_Name
   * @param {String} a_Description
   * @param {String} a_DefaultSetting
@@ -80,10 +106,29 @@ _Page.AddRadio = function () {
 
 /**
   * Creates an Input box
+  * @param {String} a_Container
+  * @param {String} a_Name
+  * @param {String} a_Description
+  * @param {String} a_DefaultSetting
+  * @param {Function} a_callback
   * @return {Void}
   */
-_Page.AddInput = function () {
+_Page.AddInput = function (a_Container, a_Name, a_Description, a_DefaultSetting, a_Callback) {
+  a_DefaultSetting = _Setting.settings[a_Name] || a_DefaultSetting;
+  var AppendTo = $(a_Container);
 
+  $(AppendTo).append('<div><label>' + a_Description + '</label><input type="text" name="setting-' + a_Name + '"></div>');
+  $("input[name='setting-" + a_Name + "']").prop("defaultValue", a_DefaultSetting)
+      .on("change", function() {
+
+          _Setting.settings[a_Name] = String($(this).val());
+          _Setting.Save(_Setting.settings);
+
+          if(a_Callback) {
+              callback();
+          }
+  });
+  _Setting.settings[a_Name] = a_DefaultSetting;
 };
 
 /**
@@ -92,6 +137,25 @@ _Page.AddInput = function () {
   */
 _Page.AddButton = function () {
 
+};
+
+/**
+  * Adds a style to the head element
+  * @param {String} StyleRules
+  * @return {Void}
+  */
+_Page.SetStyle = function (StyleRules) {
+  $( "<style>" + StyleRules + "</style>").appendTo( "head" );
+};
+
+/**
+  * Sets the page title
+  * @return {Void}
+  */
+_Page.SetTitle = function (Title) {
+  if (Title) {
+    document.title = title;
+  }
 };
 
 /**
@@ -127,16 +191,64 @@ _Page.SetupUI = function () {
   var footer = $('.aLink').parent();
   $(footer).css('border-top', '0px');
 
-  _Page.AddBool('#Custom_MainBar_Box_Chat', "allowTabCycling", "Change channels with tab", false);
-}(); // Auto runs
+  // Setup the style
+  _Page.SetStyle( "#Custom_MainBar {" +
+                  "width: 992px;" +
+                  "min-height: 90px;" +
+                  "max-height: 270px;" +
+                  "display: block;" +
+                  "position: relative;" +
+                  "margin: auto;" +
+                  "color: #ccc;" +
+                  "background-color: #1A3753;" +
+                  "border-radius: 5px 5px 0px 0px;" +
+                  "border-bottom: 1px white solid;" +
+                  "padding: 5px;" +
+                  "}" +
+                  ".Custom_MainBar_Box {" +
+                  "width: 300px;" +
+                  "height: 69px;" +
+                  "border: 1px white solid;" +
+                  "padding: 5px;" +
+                  "margin: 5px;" +
+                  "display: inline-flex;" +
+                  "align-content: space-between;" +
+                  "align-items: center;" +
+                  "flex-direction: column;" +
+                  "flex-wrap: nowrap;" +
+                  "overflow-x: hidden;" +
+                  "overflow-y: overlay;" +
+                  "}" +
+                  ".chat-timestamp {" +
+                  "font-weight: normal;" +
+                  "font-size: 16px;" +
+                  "}" +
+                  ".chat-title {" +
+                  "font-weight: bold;" +
+                  "font-size: 16px;" +
+                  "}" +
+                  ".chat-name {" +
+                  "font-weight: bold;" +
+                  "font-size: 16px;" +
+                  "}" +
+                  ".chat-message {" +
+                  "font-weight: normal;" +
+                  "font-size: 16px;" +
+                  "}" +
+                  ".chat-shout:nth-child(even) {" +
+                  "background: #FFF;" +
+                  "}" +
+                  ".chat-shout:nth-child(odd) {" +
+                  "background: #e6e6e6;" +
+                  "}" +
+                  ".chat-shout {" +
+                  "padding: 2px;" +
+                  "}"
+  );
 
-/**
-  * Adds a style to the head element
-  * @param {String} StyleRules
-  */
-_Page.SetStyle = function (StyleRules) {
-  $( "<style>" + StyleRules + "</style>").appendTo( "head" );
-};
+  _Page.AddBool('#Custom_MainBar_Box_Chat', "allowTabCycling", "Change channels with tab", false);
+  _Page.AddInput('#Custom_MainBar_Box_Chat', 'MaxChatHistory', "Max Chat History", 50);
+}(); // Auto runs
 
 /**********************************
 **                               **
@@ -307,7 +419,11 @@ _Chat.Clear = function () {
   * @return {Void}
   */
 _Chat.RemoveMessage = function () {
-
+// Check if the chat is over the max
+  if ($('.chat-shout').length > _Setting.settings.MaxChatHistory) {
+    // If it is the remove the last message
+    $('.chat-shout')[_Setting.settings.MaxChatHistory].remove();
+  }
 };
 
 /**
@@ -318,7 +434,7 @@ _Chat.RemoveMessage = function () {
 _Chat.UpdateChat = function (Message) {
   var chatText = $(Message);
 
-  for (var i = chatText.length - 1; i > 0; i--) {
+  for (var i = chatText.length - 1; i >= 0; i--) {
     if ($(chatText[i]).prop('nodeName').toLowerCase() === 'div') {
       _Chat.SendMessage(chatText[i]);
     }
@@ -334,13 +450,6 @@ _Chat.SendMessage = function (Message) {
   var ParsedMessage = _Chat.ParseMessage(Message);
 
   if (ParsedMessage) {
-
-    // TODO: Use _Chat.RemoveMessage and fix logic
-    // Error: VM16740:295 Uncaught TypeError: Cannot read property 'remove' of undefined
-    if ($('.chat-shout').length >= 49) {
-        $('.chat-shout')[50].remove();
-      //ChatIDNum = 0;
-    }
 
     if (ParsedMessage.isNotification) {
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
@@ -363,6 +472,9 @@ _Chat.SendMessage = function (Message) {
       $('#' + _Chat.IDNum).append(MessageText);
       _Chat.IDNum++;
     }
+
+    _Chat.RemoveMessage();
+
   }
 };
 
@@ -398,6 +510,26 @@ _Chat.ResetTab = function (tabID) {
   var TabText = $('#ChatName' + tabID).text();
   $('#ChatName' + tabID).text(_Chat.TabNames[tabID - 1]);
 };
+
+_Chat.NextTab = function () {
+  // Only run if it's allowed
+  if (_Setting.settings.allowTabCycling) {
+
+    var CurrentTabID = $('.TabSel').prop('id');
+    var CurrentTab = CurrentTabID[CurrentTabID.length -1];
+    var NextTab;
+
+    if (CurrentTab < 4) {
+      NextTab = +CurrentTab + 1;
+    } else {
+      NextTab = 1;
+    }
+
+    ChangeChatChannel(NextTab);
+    _Chat.Clear();
+    _Chat.ResetTab(NextTab);
+  }
+}
 
 /**********************************
 **                               **
@@ -449,6 +581,15 @@ $("#ChatCh4").click(function () {
   ChangeChatChannel(4);
   _Chat.Clear();
   _Chat.ResetTab(4);
+});
+
+$( document ).keydown(function(e) {
+    var keycode = (e.which) ? e.which : e.keyCode;
+    if (keycode == 9)
+    {
+      _Chat.NextTab();
+      e.preventDefault();
+    }
 });
 
 var getOption = function(data) {
