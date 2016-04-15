@@ -4,13 +4,13 @@
 **                               **
 **********************************/
 
-var _PageSetting = _PageSetting || {};
+var _Page = _Page || {};
 
 /**
   * Adds a style to the head element
   * @param {String} StyleRules
   */
-_PageSetting.SetStyle = function (StyleRules) {
+_Page.SetStyle = function (StyleRules) {
   $( "<style>" + StyleRules + "</style>").appendTo( "head" );
 };
 
@@ -24,6 +24,7 @@ var _ServerMessage = _ServerMessage || {};
 
 /**
   * List of all server Options
+  * TODO: Finish adding server options
   */
 _ServerMessage.Options = {
     CD:               "SETCD",
@@ -63,10 +64,13 @@ _ServerMessage.Compute = function (a_Data) {
         // We have a match; move on
         switch (key) {
           case "ChatStarted":
-            _Chat.SendMessage(Info);
+            _Chat.UpdateChat(Info);
           break;
           case "Message":
             _Chat.SendMessage(Info);
+          break;
+          case "ChatNotification":
+            _Chat.UpdateTab(Info);
           break;
           default:
             ServerReceptionHandler(RawData);
@@ -126,35 +130,44 @@ _Chat.ParseMessage = function (Message) {
 
   // Check if there's really a message
   if (Message) {
+
     var chatText = $($(Message)[0]).text();
     var linkElement = $(Message)[0].children[0].children[0];
 
-    MessageTimestamp = chatText.split('[')[1].slice(0,-1);
-    MessageTitleText = chatText.split(']')[1].substring(1);
-    MessageUsername = chatText.split(' ')[1].slice(0,-1);
-    tempText = chatText.split(' ');
-    if (tempText.length > 3) {
-      tempText.shift(); // Get rid of the title + timestamp
-      tempText.shift(); // Get rid of the name
-      MessageText = tempText.join(' ');
+    if (chatText.split(']').length !== 3) {
+      // It's a notification
+      //split('[')[1].split(']'); 0 = time, 1 = name + message
+      MessageTimestamp = chatText.split('[')[1].split(']')[0];
+      MessageUsername = chatText.split('[')[1].split(']')[1].split(' ')[0];
+      MessageText = chatText.split('[')[1].split(']')[1].substring(MessageUsername.length + 1);
+
+      return new _Chat.Message(MessageText, MessageUsername, null, null, null, MessageTimestamp, true);
     } else {
-      MessageText = tempText[2];
+      MessageTimestamp = chatText.split('[')[1].slice(0,-1);
+      MessageTitleText = chatText.split(']')[1].substring(1);
+      MessageUsername = chatText.split(' ')[1].slice(0,-1);
+      tempText = chatText.split(' ');
+      if (tempText.length > 3) {
+        tempText.shift(); // Get rid of the title + timestamp
+        tempText.shift(); // Get rid of the name
+        MessageText = tempText.join(' ');
+      } else {
+        MessageText = tempText[2];
+      }
+
+      // Get the Title Color
+      MessageTitleColor = $(linkElement).attr('style').substring(6);
+      MessageTitleColor = MessageTitleColor.slice(0,-1);
+      MessageLink = $(linkElement).attr('onclick');
+
+      // Build the object
+      //(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isNotification = false)
+      return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp);
     }
-
-    // Get the Title Color
-    MessageTitleColor = $(linkElement).attr('style').substring(6);
-    MessageTitleColor = MessageTitleColor.slice(0,-1);
-    MessageLink = $(linkElement).attr('onclick');
-
-    // Build the object
-    //(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isNotification = false)
-    return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp);
 
   } else {
     return null;
   }
-  console.log($(Message)[0]);
-  console.log(chatText);
 };
 
 /**
@@ -162,7 +175,7 @@ _Chat.ParseMessage = function (Message) {
   * @return {Void}
   */
 _Chat.Clear = function () {
-
+  $('#ChatLog').empty();
 };
 
 /**
@@ -179,8 +192,13 @@ _Chat.RemoveMessage = function () {
   * @return {Void}
   */
 _Chat.UpdateChat = function (Message) {
-  // Loop through and call SendMessage for each element
-  // May be reversed
+  var chatText = $(Message);
+
+  for (var i = chatText.length - 1; i > 0; i--) {
+    if ($(chatText[i]).prop('nodeName').toLowerCase() === 'div') {
+      _Chat.SendMessage(chatText[i]);
+    }
+  }
 };
 
 
@@ -197,19 +215,33 @@ _Chat.SendMessage = function (Message) {
         $('.chat-shout')[50].remove();
       //ChatIDNum = 0;
     }
-    var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
-    var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
-    var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
-    var MessageText = '<span class="chat-message">' + ParsedMessage.Text + '</span>';
-    $('#ChatLog').prepend('<div class="chat-shout" id="' + _Chat.IDNum + '"></div>');
-    $('#' + _Chat.IDNum).append(Timestamp);
-    $('#' + _Chat.IDNum).append(Title);
-    $('#' + _Chat.IDNum).append(Name);
-    $('#' + _Chat.IDNum).append(MessageText);
-    _Chat.IDNum++;
 
+    if (ParsedMessage.isNotification) {
+      var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
+      var Name = '<span class="chat-name"> ' + ParsedMessage.Username + ' </span>';
+      var MessageText = '<span class="chat-message">' + ParsedMessage.Text + '</span>';
+      $('#ChatLog').prepend('<div class="chat-shout chat-notification" id="' + _Chat.IDNum + '"></div>');
+      $('#' + _Chat.IDNum).append(Timestamp);
+      $('#' + _Chat.IDNum).append(Name);
+      $('#' + _Chat.IDNum).append(MessageText);
+      _Chat.IDNum++;
+    } else {
+      var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
+      var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
+      var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
+      var MessageText = '<span class="chat-message">' + ParsedMessage.Text + '</span>';
+      $('#ChatLog').prepend('<div class="chat-shout" id="' + _Chat.IDNum + '"></div>');
+      $('#' + _Chat.IDNum).append(Timestamp);
+      $('#' + _Chat.IDNum).append(Title);
+      $('#' + _Chat.IDNum).append(Name);
+      $('#' + _Chat.IDNum).append(MessageText);
+      _Chat.IDNum++;
+    }
   }
 };
+
+_Chat.TabNames = ["Public", "Help", "Kingdom", "Recruit"];
+_Chat.UnreadMessages = [0, 0, 0, 0];
 
 /**
   * Updates the tab notification number
@@ -217,7 +249,11 @@ _Chat.SendMessage = function (Message) {
   * @return {Void}
   */
 _Chat.UpdateTab = function (tabID) {
-
+  _Chat.UnreadMessages[tabID - 1]++;
+  var UnreadMessageCount = _Chat.UnreadMessages[tabID - 1];
+  var TabName = _Chat.TabNames[tabID - 1];
+  var Tab = $('#ChatName' + tabID);
+  $(Tab).text(TabName + " (" + UnreadMessageCount + ")");
 };
 
 /**
@@ -226,7 +262,9 @@ _Chat.UpdateTab = function (tabID) {
   * @return {Void}
   */
 _Chat.ResetTab = function (tabID) {
-
+  _Chat.UnreadMessages[tabID - 1] = 0;
+  var TabText = $('#ChatName' + tabID).text();
+  $('#ChatName' + tabID).text(_Chat.TabNames[tabID - 1]);
 };
 
 /**********************************
@@ -265,7 +303,32 @@ var _Setting = _Setting|| {};
 _Setting.settings = '';
 
 
+/**********************************
+**                               **
+**          DOM Events           **
+**                               **
+**********************************/
 
+$("#ChatCh1").click(function () {
+  ChangeChatChannel(1);
+  _Chat.Clear();
+  _Chat.ResetTab(1);
+});
+$("#ChatCh2").click(function () {
+  ChangeChatChannel(2);
+  _Chat.Clear();
+  _Chat.ResetTab(2);
+});
+$("#ChatCh3").click(function () {
+  ChangeChatChannel(3);
+  _Chat.Clear();
+  _Chat.ResetTab(3);
+});
+$("#ChatCh4").click(function () {
+  ChangeChatChannel(4);
+  _Chat.Clear();
+  _Chat.ResetTab(4);
+});
 
 var getOption = function(data) {
   ServerReceptionHandler(a_Data);
