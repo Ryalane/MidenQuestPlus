@@ -1,3 +1,14 @@
+// ==UserScript==
+// @name         MidenQuest+
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  MidenQuest Enhancement Script
+// @author       Ryalane
+// @include      http://www.midenquest.com/Game.aspx
+// @include      http://midenquest.com/Game.aspx
+// @grant        none
+// ==/UserScript==
+
 /**
   * Table of Contents
   *
@@ -65,6 +76,8 @@ _Setting.settings = _Setting.Load();
 **********************************/
 
 var _Page = _Page || {};
+
+_Page.isLoaded = false;
 
 /**
   * Creates a Checkbox
@@ -162,7 +175,8 @@ _Page.SetTitle = function (Title) {
   * Sets up the page
   * @return {Void}
   */
-_Page.SetupUI = function () {
+_Page.SetupUI = function (Username) {
+  _Page.isLoaded = true;
   // Make the container
   $('body').prepend('<div id="Custom_MainBar"></div>');
   // Set the title
@@ -250,8 +264,56 @@ _Page.SetupUI = function () {
 
   _Page.AddBool('#Custom_MainBar_Box_Chat', "allowTabCycling", "Change channels with tab", false);
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'MaxChatHistory', "Max Chat History", 50);
-  _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionTriggers', 'Mention Keywords', 'Username');
-}(); // Auto runs
+  _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionTriggers', 'Mention Keywords', Username);
+  _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionBackground', 'Mention Background Colour', 'rgba(255, 165, 50, 0.5)');
+
+  $("#ChatCh1").click(function () {
+    if (_Chat.CurrentTab != 1) {
+      _Chat.CurrentTab = 1;
+      ChangeChatChannel(1);
+      _Chat.Clear();
+      _Chat.ResetTab(1);
+    }
+  });
+  $("#ChatCh2").click(function () {
+    if (_Chat.CurrentTab != 2) {
+      _Chat.CurrentTab = 2;
+      ChangeChatChannel(2);
+      _Chat.Clear();
+      _Chat.ResetTab(2);
+    }
+  });
+  $("#ChatCh3").click(function () {
+    if (_Chat.CurrentTab != 3) {
+      _Chat.CurrentTab = 3;
+      ChangeChatChannel(3);
+      _Chat.Clear();
+      _Chat.ResetTab(3);
+    }
+  });
+  $("#ChatCh4").click(function () {
+    if (_Chat.CurrentTab != 4) {
+      _Chat.CurrentTab = 4;
+      ChangeChatChannel(4);
+      _Chat.Clear();
+      _Chat.ResetTab(4);
+    }
+  });
+
+  $( document ).keydown(function(e) {
+      var keycode = (e.which) ? e.which : e.keyCode;
+      if (keycode == 9)
+      {
+        _Chat.NextTab();
+        e.preventDefault();
+      }
+  });
+
+  ChangeChatChannel(2);
+
+  ChangeChatChannel(1);
+  _Chat.Clear();
+};
 
 /**********************************
 **                               **
@@ -266,19 +328,37 @@ var _ServerMessage = _ServerMessage || {};
   * TODO: Finish adding server options
   */
 _ServerMessage.Options = {
+    Connect:          "CONNECTED",
+    SetName:          "SETNAME",
+    SetTitleCount:    "SETTITLECOUNT",
+    SetLevel:         "SETLVL",
+    SetGold:          "SETGOLD",
+    SetElements:      "SETME",
+    SetRelics:        "SETRELIC",
+    SetGems:          "SETGEM",
+    SetKeys:          "SETKEY",
+    SetKingdom:       "SETKING",
+    SetLocation:      "SETLOC",
+    GetMinimap:       "LOADMINIMAP",
     CD:               "SETCD",
     ChatNotification: "CHATNOTIF",
-    GetName:          "SETNAME",
+    Notification:     "NOTIF",
+    Captcha:          "CAPTCHA_CHALLENGE",
     LoadLog:          "LOGSTART",
     Log:              "NLOG",
-    Location:         "SETLOC",
     Message:          "CHATNEW",
     ChatStarted:      "CHATSTART",
     Channel:          "CHANNEL",
-    Timer:            "TIMER",
     LoadPage:         "LOADPAGE",
     TSData:           "TSLVL",
-    Ore:              "SETORE"
+    TSOdds:           "TSODDS",
+    TSBonus:          "TSBONUS",
+    SetOre:           "SETORE",
+    SetPlant:         "SETPLANT",
+    SetWood:          "SETWOOD",
+    SetFish:          "SETFISH",
+    BoostTimer:       "TIMER",
+    OpenChest:        "OPENR" /* Got relics, may be different for gems and ME */
 };
 
 /**
@@ -303,13 +383,27 @@ _ServerMessage.Compute = function (a_Data) {
         // We have a match; move on
         switch (key) {
           case "ChatStarted":
-            _Chat.UpdateChat(Info);
+            if (_Page.isLoaded) {
+              _Chat.UpdateChat(Info);
+            } else {
+              _Chat.Clear();
+            }
           break;
           case "Message":
-            _Chat.SendMessage(Info);
+            if (_Page.isLoaded) {
+              _Chat.SendMessage(Info);
+            }
           break;
           case "ChatNotification":
-            _Chat.UpdateTab(Info);
+            if (_Page.isLoaded) {
+              _Chat.UpdateTab(Info);
+            }
+          break;
+          case "SetName":
+            if (!_Page.isLoaded) {
+              _Page.SetupUI(Info);
+            }
+            ServerReceptionHandler(RawData);
           break;
           default:
             ServerReceptionHandler(RawData);
@@ -457,6 +551,20 @@ _Chat.RemoveMessage = function () {
   }
 };
 
+_Chat.CheckMentions = function (Message) {
+  if (_Setting.settings) {
+    // Split up the mentions
+    var Triggers = _Setting.settings.mentionTriggers.split(',');
+    // Loop through mentions
+    Triggers.forEach(function(Trigger) {
+      if (Message.Text.toLowerCase().indexOf(Trigger.toLowerCase()) !== -1) {
+
+        $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
+      }
+    });
+  }
+};
+
 /**
   * Updates the chat window when the user goes to a different tab
   * @param {String} Message
@@ -490,7 +598,6 @@ _Chat.SendMessage = function (Message) {
       $('#' + _Chat.IDNum).append(Timestamp);
       $('#' + _Chat.IDNum).append(Name);
       $('#' + _Chat.IDNum).append(MessageText);
-      _Chat.IDNum++;
     } else {
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
       var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
@@ -501,9 +608,10 @@ _Chat.SendMessage = function (Message) {
       $('#' + _Chat.IDNum).append(Title);
       $('#' + _Chat.IDNum).append(Name);
       $('#' + _Chat.IDNum).append(MessageText);
-      _Chat.IDNum++;
     }
 
+    _Chat.CheckMentions(ParsedMessage);
+    _Chat.IDNum++;
     _Chat.RemoveMessage();
 
   }
@@ -517,6 +625,10 @@ _Chat.TabNames = ["Public", "Help", "Kingdom", "Recruit"];
   * Used to keep track of unread messages
   */
 _Chat.UnreadMessages = [0, 0, 0, 0];
+/**
+  * Current TabNames
+  */
+_Chat.CurrentTab = 0;
 
 /**
   * Updates the tab notification number
@@ -555,10 +667,10 @@ _Chat.NextTab = function () {
     } else {
       NextTab = 1;
     }
-
     ChangeChatChannel(NextTab);
     _Chat.Clear();
     _Chat.ResetTab(NextTab);
+    _Chat.CurrentTab = NextTab;
   }
 }
 
@@ -593,35 +705,6 @@ _Work.WorkType = function () {
 **                               **
 **********************************/
 
-$("#ChatCh1").click(function () {
-  ChangeChatChannel(1);
-  _Chat.Clear();
-  _Chat.ResetTab(1);
-});
-$("#ChatCh2").click(function () {
-  ChangeChatChannel(2);
-  _Chat.Clear();
-  _Chat.ResetTab(2);
-});
-$("#ChatCh3").click(function () {
-  ChangeChatChannel(3);
-  _Chat.Clear();
-  _Chat.ResetTab(3);
-});
-$("#ChatCh4").click(function () {
-  ChangeChatChannel(4);
-  _Chat.Clear();
-  _Chat.ResetTab(4);
-});
-
-$( document ).keydown(function(e) {
-    var keycode = (e.which) ? e.which : e.keyCode;
-    if (keycode == 9)
-    {
-      _Chat.NextTab();
-      e.preventDefault();
-    }
-});
 
 var getOption = function(data) {
   ServerReceptionHandler(a_Data);
