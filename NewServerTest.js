@@ -128,7 +128,7 @@ _Page.SetupUI = function () {
   $(footer).css('border-top', '0px');
 
   _Page.AddBool('#Custom_MainBar_Box_Chat', "allowTabCycling", "Change channels with tab", false);
-}();
+}(); // Auto runs
 
 /**
   * Adds a style to the head element
@@ -366,7 +366,13 @@ _Chat.SendMessage = function (Message) {
   }
 };
 
+/**
+  * List of tab names
+  */
 _Chat.TabNames = ["Public", "Help", "Kingdom", "Recruit"];
+/**
+  * Used to keep track of unread messages
+  */
 _Chat.UnreadMessages = [0, 0, 0, 0];
 
 /**
