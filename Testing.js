@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name         MidenQuest+
-// @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.3
+// @namespace    https://github.com/Ryalane
+// @version      0.1
 // @description  MidenQuest Enhancement Script
-// @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane
 // @include      http://www.midenquest.com/Game.aspx
 // @include      http://midenquest.com/Game.aspx
@@ -79,21 +78,6 @@ _Setting.settings = _Setting.Load();
 var _Page = _Page || {};
 
 _Page.isLoaded = false;
-
-_Page.NotifyUser = function (Title, Body) {
-  if (!Notification) {
-	   alert('Desktop notifications not available in your browser. Try Chromium.');
-     return;
-  }
-  if (Notification.permission !== "granted") {
-    Notification.requestPermission();
-  } else {
-    var notification = new Notification(Title, {
-      title: Title,
-      body: Body
-    });
-  }
-};
 
 /**
   * Creates a Checkbox
@@ -353,11 +337,9 @@ _ServerMessage.Options = {
     SetRelics:        "SETRELIC",
     SetGems:          "SETGEM",
     SetKeys:          "SETKEY",
-    SetBags:          "SETRESBOX",
     SetKingdom:       "SETKING",
     SetLocation:      "SETLOC",
     GetMinimap:       "LOADMINIMAP",
-    GetKingdomMap:    "LOADKINGMINIMAP",
     CD:               "SETCD",
     ChatNotification: "CHATNOTIF",
     Notification:     "NOTIF",
@@ -409,25 +391,13 @@ _ServerMessage.Compute = function (a_Data) {
           break;
           case "Message":
             if (_Page.isLoaded) {
-              _Chat.SendMessage(Info, "Normal");
+              _Chat.SendMessage(Info);
             }
           break;
           case "ChatNotification":
             if (_Page.isLoaded) {
               _Chat.UpdateTab(Info);
             }
-          break;
-          case "TSData":
-            if (_Page.isLoaded) {
-              _Work.HandleWork(RawData);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          case "CD":
-            if (_Page.isLoaded) {
-              _Work.HandleWork(RawData);
-            }
-            ServerReceptionHandler(RawData);
           break;
           case "SetName":
             if (!_Page.isLoaded) {
@@ -465,17 +435,15 @@ _Chat.IDNum = 0;
   * @param {String} a_Title_Color
   * @param {String} a_Link
   * @param {String} a_Timestamp
-  * @param {Bool} a_isMass
   * @param {Bool} [a_isNotification=false]
   * @return {Void}
   */
-_Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isMass, a_isNotification = false) {
+_Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isNotification = false) {
   this.Text = a_Text;
   this.Username = a_Username;
   this.Title = {Text: a_Title, Color: a_Title_Color};
   this.UserPage = a_Link;
   this.Timestamp = a_Timestamp;
-  this.isMass = a_isMass;
   this.isNotification = a_isNotification;
 };
 
@@ -484,7 +452,7 @@ _Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_T
   * @param {String} Message
   * @return {Message} The Parsed Message or {Void} if there's an error
   */
-_Chat.ParseMessage = function (Message, type) {
+_Chat.ParseMessage = function (Message) {
 
   var MessageTimestamp; //
   var MessageTitleText; //
@@ -492,13 +460,6 @@ _Chat.ParseMessage = function (Message, type) {
   var MessageText;      //
   var MessageTitleColor;
   var MessageLink;
-  var MessageIsMass;
-
-  if (type === "Mass") {
-    MessageIsMass = true;
-  } else {
-    MessageIsMass = false;
-  }
 
   // Check if there's really a message
   if (Message) {
@@ -508,11 +469,12 @@ _Chat.ParseMessage = function (Message, type) {
 
     if (chatText.split(']').length < 3) {
       // It's a notification
+      //split('[')[1].split(']'); 0 = time, 1 = name + message
       MessageTimestamp = chatText.split('[')[1].split(']')[0];
       MessageUsername = chatText.split('[')[1].split(']')[1].split(' ')[0];
       MessageText = chatText.split('[')[1].split(']')[1].substring(MessageUsername.length + 1);
 
-      return new _Chat.Message(MessageText, MessageUsername, null, null, null, MessageTimestamp, MessageIsMass, true);
+      return new _Chat.Message(MessageText, MessageUsername, null, null, null, MessageTimestamp, true);
     } else {
       MessageTimestamp = chatText.split('[')[1].slice(0,-1);
       MessageTitleText = chatText.split(']')[1].substring(1);
@@ -560,7 +522,8 @@ _Chat.ParseMessage = function (Message, type) {
       MessageLink = $(linkElement).attr('onclick');
 
       // Build the object
-      return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp, MessageIsMass);
+      //(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isNotification = false)
+      return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp);
     }
 
   } else {
@@ -588,10 +551,6 @@ _Chat.RemoveMessage = function () {
   }
 };
 
-/**
-  * Checks if there are any mentions of any mentionTriggers. Creates a notification and highlights
-  * @return {Void}
-  */
 _Chat.CheckMentions = function (Message) {
   if (_Setting.settings) {
     // Split up the mentions
@@ -599,9 +558,7 @@ _Chat.CheckMentions = function (Message) {
     // Loop through mentions
     Triggers.forEach(function(Trigger) {
       if (Message.Text.toLowerCase().indexOf(Trigger.toLowerCase()) !== -1) {
-        if (!Message.isMass) {
-          _Page.NotifyUser("Someone mentioned " + Trigger + "!", Message.Text);
-        }
+
         $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
       }
     });
@@ -618,17 +575,18 @@ _Chat.UpdateChat = function (Message) {
 
   for (var i = chatText.length - 1; i >= 0; i--) {
     if ($(chatText[i]).prop('nodeName').toLowerCase() === 'div') {
-      _Chat.SendMessage(chatText[i], "Mass");
+      _Chat.SendMessage(chatText[i]);
     }
   }
 };
+
 
 /**
   * Sends a message to the chat box
   * @return {Void}
   */
-_Chat.SendMessage = function (Message, type) {
-  var ParsedMessage = _Chat.ParseMessage(Message, type);
+_Chat.SendMessage = function (Message) {
+  var ParsedMessage = _Chat.ParseMessage(Message);
 
   if (ParsedMessage) {
 
@@ -696,10 +654,6 @@ _Chat.ResetTab = function (tabID) {
   $('#ChatName' + tabID).text(_Chat.TabNames[tabID - 1]);
 };
 
-/**
-  * Go to the next tab
-  * @return {Void}
-  */
 _Chat.NextTab = function () {
   // Only run if it's allowed
   if (_Setting.settings.allowTabCycling) {
@@ -729,66 +683,43 @@ _Chat.NextTab = function () {
 
 var _Work = _Work || {};
 
-_Work.TradeSkillInfo = function () {
-  this.isWorking = false;
-  this.CurrentWorkload = 0;
-  this.MaxWorkload = 0;
-  this.WorkType = "";
-};
-
-/**
-  * Handle the Work Logic
-  * @return {Void}
-  */
-_Work.HandleWork = function (Data) {
-  var Arr = Data.split('|');
-  var Command = Arr[0];
-
-  switch (Command) {
-    case "SETCD":
-
-    break;
-    case "TSLVL":
-
-    break;
-  }
-};
-
-/**
-  * Gets the workload
-  * @return {String} Workload
-  */
+// Return the workload
 _Work.Workload = function () {
 
 };
 
-/**
-  * Gets if the user is working
-  * @return {Bool} Is Working
-  */
+// Return true/false if is working
 _Work.isWorking = function () {
 
 };
 
-/**
-  * Gets the type of work being done
-  * @return {String} Work Type
-  */
+// Return the type of work that's being done
 _Work.WorkType = function () {
 
 };
 
-/**
-  * Update the title with the workload
-  * @return {Void}
-  */
-_Work.UpdateTitle = function () {
 
-}
+/**********************************
+**                               **
+**          DOM Events           **
+**                               **
+**********************************/
 
 
-/**
-  * Listens to the server messages
-  * @return {Void}
-  */
-ws.onmessage = _ServerMessage.Compute;
+var getOption = function(data) {
+  ServerReceptionHandler(a_Data);
+  var Arr = data.split('|');
+  var Command = Arr[0];
+  if (Command === "CHATNEW") {
+    var ChatInfo = Arr[1];
+    var chatText = $($(ChatInfo)[0]).text();
+    console.log(chatText);
+  }
+};
+
+function onmsg(evt) {
+  getOption(evt.data);
+	_ServerMessage.Compute(evt.data);
+};
+
+ws.onmessage=_ServerMessage.Compute;
