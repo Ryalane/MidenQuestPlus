@@ -80,6 +80,13 @@ var _Page = _Page || {};
 
 _Page.isLoaded = false;
 
+/**
+  * Creates a Desktop Notification
+  * @param {String} Title
+  * @param {String} Body
+  * @return {Void}
+  * Credits to derivagral
+  */
 _Page.NotifyUser = function (Title, Body) {
   if (!Notification) {
 	   alert('Desktop notifications not available in your browser. Try Chromium.');
