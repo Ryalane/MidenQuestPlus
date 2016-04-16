@@ -67,7 +67,9 @@ _Setting.Load = function () {
 _Setting.Save = function () {
   localStorage.setItem('MidenQuestPlus-settings', JSON.stringify(_Setting.settings));
 };
-
+/**
+  * Holds the settings from/for the LocalStorage
+  */
 _Setting.settings = _Setting.Load();
 
 /**********************************
@@ -78,6 +80,9 @@ _Setting.settings = _Setting.Load();
 
 var _Page = _Page || {};
 
+/**
+  * Used to make sure none of the DOM watches are enabled until the server has set up the page
+  */
 _Page.isLoaded = false;
 
 /**
@@ -736,6 +741,9 @@ _Chat.NextTab = function () {
 
 var _Work = _Work || {};
 
+/**
+  * The work object. Still deciding how to handle this stuff
+  */
 _Work.TradeSkillInfo = function () {
   this.isWorking = false;
   this.CurrentWorkload = 0;
