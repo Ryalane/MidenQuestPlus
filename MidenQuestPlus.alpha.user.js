@@ -388,7 +388,7 @@ _ServerMessage.Options = {
     SetWood:          "SETWOOD",
     SetFish:          "SETFISH",
     BoostTimer:       "TIMER",
-    OpenChest:        "OPENR" /* Got relics, may be different for gems and ME */
+    OpenChest:        "OPENR" /* It's the box that pops up when you open a bag/key */
 };
 
 /**
