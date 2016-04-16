@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.3
+// @version      0.4
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane
@@ -92,7 +92,7 @@ _Page.isLoaded = false;
   * @return {Void}
   * Credits to derivagral
   */
-_Page.NotifyUser = function (Title, Body) {
+_Page.Notify = function (Title, Body) {
   if (!Notification) {
 	   alert('Desktop notifications not available in your browser. Try Chromium.');
      return;
@@ -195,7 +195,7 @@ _Page.SetStyle = function (StyleRules) {
   */
 _Page.SetTitle = function (Title) {
   if (Title) {
-    document.title = title;
+    document.title = Title;
   }
 };
 
@@ -612,7 +612,7 @@ _Chat.CheckMentions = function (Message) {
     Triggers.forEach(function(Trigger) {
       if (Message.Text.toLowerCase().indexOf(Trigger.toLowerCase()) !== -1) {
         if (!Message.isMass) {
-          _Page.NotifyUser("Someone mentioned " + Trigger + "!", Message.Text);
+          _Page.Notify("Someone mentioned " + Trigger + "!", Message.Text);
         }
         $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
       }
@@ -744,12 +744,10 @@ var _Work = _Work || {};
 /**
   * The work object. Still deciding how to handle this stuff
   */
-_Work.TradeSkillInfo = function () {
-  this.isWorking = false;
-  this.CurrentWorkload = 0;
-  this.MaxWorkload = 0;
-  this.WorkType = "";
-};
+_Work.isWorking = true; // Set it to true by default so its not annoying
+_Work.CurrentWorkload = 0;
+_Work.MaxWorkload = 0;
+_Work.WorkType = "";
 
 /**
   * Handle the Work Logic
@@ -761,36 +759,48 @@ _Work.HandleWork = function (Data) {
 
   switch (Command) {
     case "SETCD":
+      // Check if the player is working
+      if (Arr[3].length > 0) {
+        // Set it to true since the player is
+        if (!_Work.isWorking) {
+          _Work.isWorking = true;
+        }
 
+        // Check what the workload is
+        if (_Work.isWorking) {
+          Workload = _Work.getWorkload(Arr[3]);
+          _Work.CurrentWorkload = Workload[0];
+          _Work.MaxWorkload = Workload[1];
+          _Work.UpdateTitle();
+        }
+      } else {
+        if (_Work.isWorking) {
+          _Work.isWorking = false;
+          _Work.UpdateTitle();
+          _Page.Notify("Done Working!", "You have finished " + _Work.WorkType);
+        }
+      }
     break;
     case "TSLVL":
-
+      _Work.WorkType = Arr[2];
     break;
   }
 };
 
 /**
-  * Gets the workload
-  * @return {String} Workload
+  * Parse the workload string
+  * @param {String} Workload
+  * @return {Array} Min Max
   */
-_Work.Workload = function () {
+_Work.getWorkload = function (Workload) {
+  var Min;
+  var Max;
+  var Arr = (Workload.split(' ')).pop(); // Get rid of the work type
+  Min = Arr.split('/')[0];
+  Max = Arr.split('/')[1];
 
-};
-
-/**
-  * Gets if the user is working
-  * @return {Bool} Is Working
-  */
-_Work.isWorking = function () {
-
-};
-
-/**
-  * Gets the type of work being done
-  * @return {String} Work Type
-  */
-_Work.WorkType = function () {
-
+// I know it's not efficient, but I'll keep it like this in case I ever need to get it elsewhere
+  return [Min, Max];
 };
 
 /**
@@ -798,8 +808,14 @@ _Work.WorkType = function () {
   * @return {Void}
   */
 _Work.UpdateTitle = function () {
-
-}
+  var Title;
+  if (_Work.isWorking) {
+    Title = _Work.WorkType + " " + _Work.CurrentWorkload + "/" + _Work.MaxWorkload;
+  } else {
+    Title = "Done " + _Work.WorkType;
+  }
+  _Page.SetTitle(Title);
+};
 
 
 /**
