@@ -405,6 +405,7 @@ _ServerMessage.Compute = function (a_Data) {
   Command = Arr[0];
   Info = Arr[1];
 
+  // This really needs to be cleaned up.. maybe get rid of _ServerMessage.Options :(
   if (Command) {
     for (var i = 0; i < Object.keys(_ServerMessage.Options).length; i++) {
       var key = Object.keys(_ServerMessage.Options)[i];
