@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.4
+// @version      0.5
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane
@@ -273,6 +273,9 @@ _Page.SetupUI = function (Username) {
                   ".chat-message {" +
                   "font-weight: normal;" +
                   "}" +
+                  ".chat-action {" +
+                  "font-style: italic" +
+                  "}" +
                   ".chat-shout:nth-child(even) {" +
                   "background: #FFF;" +
                   "}" +
@@ -479,17 +482,20 @@ _Chat.IDNum = 0;
   * @param {String} a_Link
   * @param {String} a_Timestamp
   * @param {Bool} a_isMass
-  * @param {Bool} [a_isNotification=false]
+  * @param {Bool} a_isNotification
+  * @param {Bool} a_isAction
   * @return {Void}
   */
-_Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isMass, a_isNotification = false) {
+_Chat.Message = function(a_Text, a_Text_Color, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isMass, a_isNotification, a_isAction) {
   this.Text = a_Text;
+  this.TextColor = a_Text_Color;
   this.Username = a_Username;
   this.Title = {Text: a_Title, Color: a_Title_Color};
   this.UserPage = a_Link;
   this.Timestamp = a_Timestamp;
   this.isMass = a_isMass;
   this.isNotification = a_isNotification;
+  this.isAction = a_isAction;
 };
 
 /**
@@ -506,6 +512,8 @@ _Chat.ParseMessage = function (Message, type) {
   var MessageTitleColor;
   var MessageLink;
   var MessageIsMass;
+  var MessageIsAction;
+  var MessageColor;
 
   if (type === "Mass") {
     MessageIsMass = true;
@@ -525,7 +533,7 @@ _Chat.ParseMessage = function (Message, type) {
       MessageUsername = chatText.split('[')[1].split(']')[1].split(' ')[0];
       MessageText = chatText.split('[')[1].split(']')[1].substring(MessageUsername.length + 1);
 
-      return new _Chat.Message(MessageText, MessageUsername, null, null, null, MessageTimestamp, MessageIsMass, true);
+      return new _Chat.Message(MessageText, null, MessageUsername, null, null, null, MessageTimestamp, MessageIsMass, true, false);
     } else {
       MessageTimestamp = chatText.split('[')[1].slice(0,-1);
       MessageTitleText = chatText.split(']')[1].substring(1);
@@ -567,19 +575,42 @@ _Chat.ParseMessage = function (Message, type) {
       }
       MessageText = ColonFix;
 
+      // Now that we have the message text lets check if theres an action
+      MessageIsAction = _Chat.isAction(MessageText);
+      MessageColor = _Chat.isColor(MessageText);
+      console.log(MessageText + " Message Color: " + MessageColor);
+
       // Get the Title Color
       MessageTitleColor = $(linkElement).attr('style').substring(6);
       MessageTitleColor = MessageTitleColor.slice(0,-1);
       MessageLink = $(linkElement).attr('onclick');
 
       // Build the object
-      return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp, MessageIsMass);
+      return new _Chat.Message(MessageText, MessageColor, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp, MessageIsMass, false, MessageIsAction);
     }
 
   } else {
     return null;
   }
 };
+
+_Chat.isAction = function (Text) {
+  if (Text.indexOf("[/me]") > -1) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+_Chat.isColor = function (Text) {
+  ResMatch = /\[\/#([0-9a-f]{6}|[0-9a-f]{3})]/gi;
+  var temp = Text.match(ResMatch);
+  if (temp) {
+    temp = temp[0].substring(2);
+    temp = temp.slice(0, -1);
+    return temp;
+  }
+}
 
 /**
   * Clears the chat box
@@ -657,12 +688,32 @@ _Chat.SendMessage = function (Message, type) {
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
       var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
       var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
-      var MessageText = '<span class="chat-message">' + ParsedMessage.Text + '</span>';
+      var MessageText = '<span class="chat-message"></span>';
+      if (ParsedMessage.isAction) {
+        ParsedMessage.Text = ParsedMessage.Text.replace("[/me]", "");
+        if (ParsedMessage.TextColor) {
+          re = /\[\/#([0-9a-f]{6}|[0-9a-f]{3})\]/i;
+          ParsedMessage.Text = ParsedMessage.Text.replace(re, "");
+          MessageText = '<span class="chat-message chat-action" style="color: ' + ParsedMessage.TextColor + ';">' + ParsedMessage.Text + '</span>';
+        } else {
+          MessageText = '<span class="chat-message chat-action">' + ParsedMessage.Text + '</span>';
+        }
+      }
+      else {
+        if (ParsedMessage.TextColor) {
+          re = /\[\/#([0-9a-f]{6}|[0-9a-f]{3})\]/i;
+          ParsedMessage.Text = ParsedMessage.Text.replace(re, "");
+          MessageText = '<span class="chat-message" style="color: ' + ParsedMessage.TextColor + ';">' + ParsedMessage.Text + '</span>';
+        } else {
+          MessageText = '<span class="chat-message">' + ParsedMessage.Text + '</span>';
+        }
+      }
+
       $('#ChatLog').prepend('<div class="chat-shout" id="' + _Chat.IDNum + '"></div>');
       $('#' + _Chat.IDNum).append(Timestamp);
       $('#' + _Chat.IDNum).append(Title);
       $('#' + _Chat.IDNum).append(Name);
-      $('#' + _Chat.IDNum).append(MessageText);
+      $('#' + _Chat.IDNum).append(MessageText)
     }
 
     _Chat.CheckMentions(ParsedMessage);

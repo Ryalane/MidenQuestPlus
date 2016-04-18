@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         MidenQuest+
-// @namespace    https://github.com/Ryalane
-// @version      0.1
+// @namespace    https://github.com/Ryalane/MidenQuestPlus
+// @version      0.4
 // @description  MidenQuest Enhancement Script
+// @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane
 // @include      http://www.midenquest.com/Game.aspx
 // @include      http://midenquest.com/Game.aspx
@@ -66,7 +67,9 @@ _Setting.Load = function () {
 _Setting.Save = function () {
   localStorage.setItem('MidenQuestPlus-settings', JSON.stringify(_Setting.settings));
 };
-
+/**
+  * Holds the settings from/for the LocalStorage
+  */
 _Setting.settings = _Setting.Load();
 
 /**********************************
@@ -77,7 +80,32 @@ _Setting.settings = _Setting.Load();
 
 var _Page = _Page || {};
 
+/**
+  * Used to make sure none of the DOM watches are enabled until the server has set up the page
+  */
 _Page.isLoaded = false;
+
+/**
+  * Creates a Desktop Notification
+  * @param {String} Title
+  * @param {String} Body
+  * @return {Void}
+  * Credits to derivagral
+  */
+_Page.Notify = function (Title, Body) {
+  if (!Notification) {
+	   alert('Desktop notifications not available in your browser. Try Chromium.');
+     return;
+  }
+  if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+  } else {
+    var notification = new Notification(Title, {
+      title: Title,
+      body: Body
+    });
+  }
+};
 
 /**
   * Creates a Checkbox
@@ -167,7 +195,7 @@ _Page.SetStyle = function (StyleRules) {
   */
 _Page.SetTitle = function (Title) {
   if (Title) {
-    document.title = title;
+    document.title = Title;
   }
 };
 
@@ -309,8 +337,8 @@ _Page.SetupUI = function (Username) {
       }
   });
 
+  // Reset the tab
   ChangeChatChannel(2);
-
   ChangeChatChannel(1);
   _Chat.Clear();
 };
@@ -328,37 +356,58 @@ var _ServerMessage = _ServerMessage || {};
   * TODO: Finish adding server options
   */
 _ServerMessage.Options = {
-    Connect:          "CONNECTED",
-    SetName:          "SETNAME",
-    SetTitleCount:    "SETTITLECOUNT",
-    SetLevel:         "SETLVL",
-    SetGold:          "SETGOLD",
-    SetElements:      "SETME",
-    SetRelics:        "SETRELIC",
-    SetGems:          "SETGEM",
-    SetKeys:          "SETKEY",
-    SetKingdom:       "SETKING",
-    SetLocation:      "SETLOC",
-    GetMinimap:       "LOADMINIMAP",
-    CD:               "SETCD",
-    ChatNotification: "CHATNOTIF",
-    Notification:     "NOTIF",
-    Captcha:          "CAPTCHA_CHALLENGE",
-    LoadLog:          "LOGSTART",
-    Log:              "NLOG",
-    Message:          "CHATNEW",
-    ChatStarted:      "CHATSTART",
-    Channel:          "CHANNEL",
-    LoadPage:         "LOADPAGE",
-    TSData:           "TSLVL",
-    TSOdds:           "TSODDS",
-    TSBonus:          "TSBONUS",
-    SetOre:           "SETORE",
-    SetPlant:         "SETPLANT",
-    SetWood:          "SETWOOD",
-    SetFish:          "SETFISH",
-    BoostTimer:       "TIMER",
-    OpenChest:        "OPENR" /* Got relics, may be different for gems and ME */
+    List: { /* List of known options */
+      Connect:          "CONNECTED",
+      SetName:          "SETNAME",
+      SetTitleCount:    "SETTITLECOUNT",
+      SetLevel:         "SETLVL",
+      SetGold:          "SETGOLD",
+      SetElements:      "SETME",
+      SetRelics:        "SETRELIC",
+      SetGems:          "SETGEM",
+      SetKeys:          "SETKEY",
+      SetBags:          "SETRESBOX",
+      SetKingdom:       "SETKING",
+      SetLocation:      "SETLOC",
+      GetMinimap:       "LOADMINIMAP",
+      GetKingdomMap:    "LOADKINGMINIMAP",
+      CD:               "SETCD",
+      ChatNotification: "CHATNOTIF",
+      Notification:     "NOTIF",
+      Captcha:          "CAPTCHA_CHALLENGE",
+      LoadLog:          "LOGSTART",
+      Log:              "NLOG",
+      Message:          "CHATNEW",
+      ChatStarted:      "CHATSTART",
+      Channel:          "CHANNEL",
+      LoadPage:         "LOADPAGE",
+      TSData:           "TSLVL",
+      TSOdds:           "TSODDS",
+      TSBonus:          "TSBONUS",
+      SetOre:           "SETORE",
+      SetPlant:         "SETPLANT",
+      SetWood:          "SETWOOD",
+      SetFish:          "SETFISH",
+      BoostTimer:       "TIMER",
+      OpenChest:        "OPENR" /* It's the box that pops up when you open a bag/key */
+    },
+
+    Find: function (a_Command) {
+      if (a_Command) {
+        // Loop through all the objects in List
+        for (var i = 0; i < Object.keys(this.List).length; i++) {
+          var key = Object.keys(this.List)[i];
+          var value = this.List[key];
+          if (a_Command === value) {
+            return key;
+          } else if (i === Object.keys(this.List).length - 1) {
+            return null;
+          }
+        }
+      } else {
+        return null;
+      }
+    }
 };
 
 /**
@@ -368,47 +417,48 @@ _ServerMessage.Options = {
   */
 _ServerMessage.Compute = function (a_Data) {
   var RawData = a_Data.data;
-  var Command;
-  var Info;
   var Arr = RawData.split('|');
 
-  Command = Arr[0];
-  Info = Arr[1];
+  var RawCommand = Arr[0];
+  var Info = Arr[1];
 
-  if (Command) {
-    for (var i = 0; i < Object.keys(_ServerMessage.Options).length; i++) {
-      var key = Object.keys(_ServerMessage.Options)[i];
-      var value = _ServerMessage.Options[key];
-      if (Command === value) {
-        // We have a match; move on
-        switch (key) {
-          case "ChatStarted":
-            if (_Page.isLoaded) {
-              _Chat.UpdateChat(Info);
-            } else {
-              _Chat.Clear();
-            }
-          break;
-          case "Message":
-            if (_Page.isLoaded) {
-              _Chat.SendMessage(Info);
-            }
-          break;
-          case "ChatNotification":
-            if (_Page.isLoaded) {
-              _Chat.UpdateTab(Info);
-            }
-          break;
-          case "SetName":
-            if (!_Page.isLoaded) {
-              _Page.SetupUI(Info);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          default:
-            ServerReceptionHandler(RawData);
-          break;
-        }
+  var Command = _ServerMessage.Options.Find(RawCommand);
+
+  if (!Command) {
+    console.log("No Command");
+    ServerReceptionHandler(RawData);
+  } else {
+    if (_Page.isLoaded) {
+      switch(Command) {
+        case "ChatStarted":
+          _Chat.UpdateChat(Info);
+        break;
+        case "Message":
+          _Chat.SendMessage(Info, "Normal");
+        break;
+        case "ChatNotification":
+          _Chat.UpdateTab(Info);
+        break;
+        case "TSData":
+          _Work.HandleWork(RawData);
+        break;
+        default:
+          ServerReceptionHandler(RawData);
+        break;
+      }
+    } else {
+      // Since these ones will run the default handler, just put them here
+      switch(Command) {
+        case "ChatStarted":
+          _Chat.Clear();
+        break;
+        case "SetName":
+          ServerReceptionHandler(RawData);
+          _Page.SetupUI(Info);
+        break;
+        default:
+          ServerReceptionHandler(RawData);
+        break;
       }
     }
   }
@@ -435,15 +485,17 @@ _Chat.IDNum = 0;
   * @param {String} a_Title_Color
   * @param {String} a_Link
   * @param {String} a_Timestamp
+  * @param {Bool} a_isMass
   * @param {Bool} [a_isNotification=false]
   * @return {Void}
   */
-_Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isNotification = false) {
+_Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isMass, a_isNotification = false) {
   this.Text = a_Text;
   this.Username = a_Username;
   this.Title = {Text: a_Title, Color: a_Title_Color};
   this.UserPage = a_Link;
   this.Timestamp = a_Timestamp;
+  this.isMass = a_isMass;
   this.isNotification = a_isNotification;
 };
 
@@ -452,7 +504,7 @@ _Chat.Message = function(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_T
   * @param {String} Message
   * @return {Message} The Parsed Message or {Void} if there's an error
   */
-_Chat.ParseMessage = function (Message) {
+_Chat.ParseMessage = function (Message, type) {
 
   var MessageTimestamp; //
   var MessageTitleText; //
@@ -460,6 +512,13 @@ _Chat.ParseMessage = function (Message) {
   var MessageText;      //
   var MessageTitleColor;
   var MessageLink;
+  var MessageIsMass;
+
+  if (type === "Mass") {
+    MessageIsMass = true;
+  } else {
+    MessageIsMass = false;
+  }
 
   // Check if there's really a message
   if (Message) {
@@ -469,12 +528,11 @@ _Chat.ParseMessage = function (Message) {
 
     if (chatText.split(']').length < 3) {
       // It's a notification
-      //split('[')[1].split(']'); 0 = time, 1 = name + message
       MessageTimestamp = chatText.split('[')[1].split(']')[0];
       MessageUsername = chatText.split('[')[1].split(']')[1].split(' ')[0];
       MessageText = chatText.split('[')[1].split(']')[1].substring(MessageUsername.length + 1);
 
-      return new _Chat.Message(MessageText, MessageUsername, null, null, null, MessageTimestamp, true);
+      return new _Chat.Message(MessageText, MessageUsername, null, null, null, MessageTimestamp, MessageIsMass, true);
     } else {
       MessageTimestamp = chatText.split('[')[1].slice(0,-1);
       MessageTitleText = chatText.split(']')[1].substring(1);
@@ -522,8 +580,7 @@ _Chat.ParseMessage = function (Message) {
       MessageLink = $(linkElement).attr('onclick');
 
       // Build the object
-      //(a_Text, a_Username, a_Title, a_Title_Color, a_Link, a_Timestamp, a_isNotification = false)
-      return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp);
+      return new _Chat.Message(MessageText, MessageUsername, MessageTitleText, MessageTitleColor, MessageLink, MessageTimestamp, MessageIsMass);
     }
 
   } else {
@@ -551,6 +608,10 @@ _Chat.RemoveMessage = function () {
   }
 };
 
+/**
+  * Checks if there are any mentions of any mentionTriggers. Creates a notification and highlights
+  * @return {Void}
+  */
 _Chat.CheckMentions = function (Message) {
   if (_Setting.settings) {
     // Split up the mentions
@@ -558,7 +619,9 @@ _Chat.CheckMentions = function (Message) {
     // Loop through mentions
     Triggers.forEach(function(Trigger) {
       if (Message.Text.toLowerCase().indexOf(Trigger.toLowerCase()) !== -1) {
-
+        if (!Message.isMass) {
+          _Page.Notify("Someone mentioned " + Trigger + "!", Message.Text);
+        }
         $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
       }
     });
@@ -575,18 +638,17 @@ _Chat.UpdateChat = function (Message) {
 
   for (var i = chatText.length - 1; i >= 0; i--) {
     if ($(chatText[i]).prop('nodeName').toLowerCase() === 'div') {
-      _Chat.SendMessage(chatText[i]);
+      _Chat.SendMessage(chatText[i], "Mass");
     }
   }
 };
-
 
 /**
   * Sends a message to the chat box
   * @return {Void}
   */
-_Chat.SendMessage = function (Message) {
-  var ParsedMessage = _Chat.ParseMessage(Message);
+_Chat.SendMessage = function (Message, type) {
+  var ParsedMessage = _Chat.ParseMessage(Message, type);
 
   if (ParsedMessage) {
 
@@ -654,6 +716,10 @@ _Chat.ResetTab = function (tabID) {
   $('#ChatName' + tabID).text(_Chat.TabNames[tabID - 1]);
 };
 
+/**
+  * Go to the next tab
+  * @return {Void}
+  */
 _Chat.NextTab = function () {
   // Only run if it's allowed
   if (_Setting.settings.allowTabCycling) {
@@ -683,43 +749,92 @@ _Chat.NextTab = function () {
 
 var _Work = _Work || {};
 
-// Return the workload
-_Work.Workload = function () {
+/**
+  * The work object. Still deciding how to handle this stuff
+  */
+_Work.TSInfo = {
+  WorkType: "",
+  MaxWorkload: 0,
+  CurrentWorkload: 0,
+  isWorking: 0
+}
 
-};
+_Work.isWorking = true; // Set it to true by default so its not annoying
+_Work.CurrentWorkload = 0;
+_Work.MaxWorkload = 0;
+_Work.WorkType = "";
 
-// Return true/false if is working
-_Work.isWorking = function () {
-
-};
-
-// Return the type of work that's being done
-_Work.WorkType = function () {
-
-};
-
-
-/**********************************
-**                               **
-**          DOM Events           **
-**                               **
-**********************************/
-
-
-var getOption = function(data) {
-  ServerReceptionHandler(a_Data);
-  var Arr = data.split('|');
+/**
+  * Handle the Work Logic
+  * @return {Void}
+  */
+_Work.HandleWork = function (Data) {
+  var Arr = Data.split('|');
   var Command = Arr[0];
-  if (Command === "CHATNEW") {
-    var ChatInfo = Arr[1];
-    var chatText = $($(ChatInfo)[0]).text();
-    console.log(chatText);
+
+  switch (Command) {
+    case "SETCD":
+      // Check if the player is working
+      if (Arr[3].length > 0) {
+        // Set it to true since the player is
+        if (!_Work.isWorking) {
+          _Work.isWorking = true;
+        }
+
+        // Check what the workload is
+        if (_Work.isWorking) {
+          Workload = _Work.getWorkload(Arr[3]);
+          _Work.CurrentWorkload = Workload[0];
+          _Work.MaxWorkload = Workload[1];
+          _Work.UpdateTitle();
+        }
+      } else {
+        if (_Work.isWorking) {
+          _Work.isWorking = false;
+          _Work.UpdateTitle();
+          _Page.Notify("Done Working!", "You have finished " + _Work.WorkType);
+        }
+      }
+    break;
+    case "TSLVL":
+      _Work.WorkType = Arr[2];
+    break;
   }
 };
 
-function onmsg(evt) {
-  getOption(evt.data);
-	_ServerMessage.Compute(evt.data);
+/**
+  * Parse the workload string
+  * @param {String} Workload
+  * @return {Array} Min Max
+  */
+_Work.getWorkload = function (Workload) {
+  var Min;
+  var Max;
+  var Arr = (Workload.split(' ')).pop(); // Get rid of the work type
+  Min = Arr.split('/')[0];
+  Max = Arr.split('/')[1];
+
+// I know it's not efficient, but I'll keep it like this in case I ever need to get it elsewhere
+  return [Min, Max];
 };
 
-ws.onmessage=_ServerMessage.Compute;
+/**
+  * Update the title with the workload
+  * @return {Void}
+  */
+_Work.UpdateTitle = function () {
+  var Title;
+  if (_Work.isWorking) {
+    Title = _Work.WorkType + " " + _Work.CurrentWorkload + "/" + _Work.MaxWorkload;
+  } else {
+    Title = "Done " + _Work.WorkType;
+  }
+  _Page.SetTitle(Title);
+};
+
+
+/**
+  * Listens to the server messages
+  * @return {Void}
+  */
+ws.onmessage = _ServerMessage.Compute;
