@@ -578,7 +578,6 @@ _Chat.ParseMessage = function (Message, type) {
       // Now that we have the message text lets check if theres an action
       MessageIsAction = _Chat.isAction(MessageText);
       MessageColor = _Chat.isColor(MessageText);
-      console.log(MessageText + " Message Color: " + MessageColor);
 
       // Get the Title Color
       MessageTitleColor = $(linkElement).attr('style').substring(6);
