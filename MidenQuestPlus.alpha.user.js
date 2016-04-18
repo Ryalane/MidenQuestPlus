@@ -45,6 +45,16 @@
 var _Setting = _Setting || {};
 
 /**
+  * Gets the version of the script
+  * @return {String} Version
+  */
+_Setting.Version = function () {
+  if (typeof GM_info !== "undefined") {
+      return GM_info.script.version;
+  }
+};
+
+/**
   * Retrieves the settings from the LocalStorage
   * @return {String} Settings
   */
