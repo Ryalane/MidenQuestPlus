@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.58
+// @version      0.59
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane, Herpes
@@ -222,7 +222,7 @@ _Page.SetupUI = function (Username) {
   $('#MainPanel').after('<div id="Custom_MainBar"></div>');
   // Set the title
   $('#Custom_MainBar').append('<h1 id="Custom_MainBar_Title"></h1>');
-  $('#Custom_MainBar_Title').text('MidenQuest+ v0.1');
+  $('#Custom_MainBar_Title').text('MidenQuest+ v' + _Setting.Version());
   // Setup boxes
   $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Workload" class="Custom_MainBar_Box"></div>');
   $('#Custom_MainBar_Box_Workload').append('<h1>Workload Settings</h1>');
@@ -456,7 +456,6 @@ _ServerMessage.Compute = function (a_Data) {
   var Command = _ServerMessage.Options.Find(RawCommand);
 
   if (!Command) {
-    console.log("No Command");
     ServerReceptionHandler(RawData);
   } else {
     if (_Page.isLoaded) {
