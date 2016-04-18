@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.5
+// @version      0.55
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane
@@ -71,6 +71,8 @@ _Setting.Save = function () {
   * Holds the settings from/for the LocalStorage
   */
 _Setting.settings = _Setting.Load();
+
+_Setting.username;
 
 /**********************************
 **                               **
@@ -298,6 +300,7 @@ _Page.SetupUI = function (Username) {
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionTriggers', 'Mention Keywords', Username);
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionBackground', 'Mention Background Colour', 'rgba(255, 165, 50, 0.5)');
 
+  _Setting.username = Username;
   $("#ChatCh1").click(function () {
     if (_Chat.CurrentTab != 1) {
       _Chat.CurrentTab = 1;
@@ -337,6 +340,10 @@ _Page.SetupUI = function (Username) {
       {
         _Chat.NextTab();
         e.preventDefault();
+      } else if (keycode == 38) {
+        _Chat.GetNextHistory();
+      } else if (keycode == 40) {
+        _Chat.GetPreviousHistory();
       }
   });
 
@@ -498,6 +505,9 @@ _Chat.Message = function(a_Text, a_Text_Color, a_Username, a_Title, a_Title_Colo
   this.isAction = a_isAction;
 };
 
+_Chat.MessageHistory = [];
+_Chat.MessageHistoryLocation = 0;
+
 /**
   * Goes through the given data and gleans required information for a chat message
   * @param {String} Message
@@ -658,13 +668,38 @@ _Chat.CheckMentions = function (Message) {
   */
 _Chat.UpdateChat = function (Message) {
   var chatText = $(Message);
-
+  _Chat.MessageHistory = [];
+  _Chat.MessageHistoryLocation = 0;
   for (var i = chatText.length - 1; i >= 0; i--) {
     if ($(chatText[i]).prop('nodeName').toLowerCase() === 'div') {
       _Chat.SendMessage(chatText[i], "Mass");
     }
   }
+
 };
+
+_Chat.GetNextHistory = function () {
+  //ONLY run if its focused on
+  if ($("#txtMessage").is(":focus")) {
+    if (_Chat.MessageHistory.length > _Chat.MessageHistoryLocation) {
+      Message = _Chat.MessageHistory[_Chat.MessageHistoryLocation];
+
+      _Chat.MessageHistoryLocation++;
+      $("#txtMessage").val(Message);
+    }
+  }
+}
+
+_Chat.GetPreviousHistory = function () {
+  if ($("#txtMessage").is(":focus")) {
+    if (_Chat.MessageHistoryLocation > 0) {
+      Message = _Chat.MessageHistory[_Chat.MessageHistoryLocation];
+
+      _Chat.MessageHistoryLocation--;
+      $("#txtMessage").val(Message);
+    }
+  }
+}
 
 /**
   * Sends a message to the chat box
@@ -684,6 +719,13 @@ _Chat.SendMessage = function (Message, type) {
       $('#' + _Chat.IDNum).append(Name);
       $('#' + _Chat.IDNum).append(MessageText);
     } else {
+
+      // Check if you sent it, and add it to the history if you did
+      if (ParsedMessage.Username === _Setting.username) {
+        _Chat.MessageHistory.unshift(ParsedMessage.Text);
+        console.log("Adding to History: " + ParsedMessage.Text);
+      }
+
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
       var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
       var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
