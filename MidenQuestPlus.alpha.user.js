@@ -471,6 +471,7 @@ _ServerMessage.Compute = function (a_Data) {
         break;
         case "TSData":
           _Work.HandleWork(RawData);
+          ServerReceptionHandler(RawData);
         break;
         default:
           ServerReceptionHandler(RawData);
