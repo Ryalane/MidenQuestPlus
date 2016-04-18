@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.57
+// @version      0.58
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane, Herpes
@@ -534,7 +534,14 @@ _Chat.Message = function(a_Text, a_Text_Color, a_Username, a_Title, a_Title_Colo
   this.isAction = a_isAction;
 };
 
+/**
+  * Holds the CURRENT USERS chat history PER Tab
+  * Feel free to update this
+  */
 _Chat.MessageHistory = [];
+/**
+  * Used for keeping track of which item in history to look at
+  */
 _Chat.MessageHistoryLocation = 0;
 
 /**
@@ -631,6 +638,7 @@ _Chat.ParseMessage = function (Message, type) {
     return null;
   }
 };
+
 
 _Chat.isAction = function (Text) {
   if (Text.indexOf("[/me]") > -1) {
