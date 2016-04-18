@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.56
+// @version      0.57
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
-// @author       Ryalane
+// @author       Ryalane, Herpes
 // @include      http://www.midenquest.com/Game.aspx
 // @include      http://midenquest.com/Game.aspx
 // @grant        none
@@ -208,7 +208,8 @@ _Page.SetTitle = function (Title) {
 _Page.SetupUI = function (Username) {
   _Page.isLoaded = true;
   // Make the container
-  $('body').prepend('<div id="Custom_MainBar"></div>');
+  $('#ChatSend').after('<button id="SettingsToggle" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Settings</span></button>');
+  $('#MainPanel').after('<div id="Custom_MainBar"></div>');
   // Set the title
   $('#Custom_MainBar').append('<h1 id="Custom_MainBar_Title"></h1>');
   $('#Custom_MainBar_Title').text('MidenQuest+ v0.1');
@@ -236,22 +237,28 @@ _Page.SetupUI = function (Username) {
   $(footer).css('border-top', '0px');
 
   // Setup the style
-  _Page.SetStyle( "#Custom_MainBar {" +
+  _Page.SetStyle( "#SettingsToggle {" +
+                  "float:left;" +
+                  "margin-left:5px;" +
+                  "width:60px;" +
+                  "margin-bottom:3px;" +
+                  "font-size: 8pt;" +
+                  "}" +
+                  "#Custom_MainBar {" +
                   "width: 992px;" +
                   "min-height: 90px;" +
-                  "max-height: 270px;" +
-                  "display: block;" +
+                  "display: none;" +
                   "position: relative;" +
                   "margin: auto;" +
                   "color: #ccc;" +
                   "background-color: #1A3753;" +
                   "border-radius: 5px 5px 0px 0px;" +
-                  "border-bottom: 1px white solid;" +
+                  "border-top: 1px white solid;" +
                   "padding: 5px;" +
                   "}" +
                   ".Custom_MainBar_Box {" +
                   "width: 300px;" +
-                  "height: 69px;" +
+                  "height: 120px;" +
                   "border: 1px white solid;" +
                   "padding: 5px;" +
                   "margin: 5px;" +
@@ -332,6 +339,10 @@ _Page.SetupUI = function (Username) {
       _Chat.Clear();
       _Chat.ResetTab(4);
     }
+  });
+
+  $("#SettingsToggle").click(function () {
+    $("#Custom_MainBar").toggle();
   });
 
   $( document ).keydown(function(e) {
@@ -645,25 +656,25 @@ _Chat.RemoveMessage = function () {
   * Checks if there are any mentions of any mentionTriggers. Creates a notification and highlights
   * @return {Void}
   */
-_Chat.CheckMentions = function (a_Message) {
-  //Uh, Ryalane. Dumb fucking question. Could you do that string.split, throw everything tolower, and say fuck off to Regex with if(str1 == str2)?
-  if (_Setting.settings && a_Message) {
-    // Split up the mentions Message
-    var Triggers = _Setting.settings.mentionTriggers.split(',');
-      var TextList = a_Message.Text.split(' ');
-    // Loop through mentions
-    Triggers.forEach(function(Trigger) {
-      for (var i = 0; i < TextList.length; i++) {
-        if (Trigger === TextList[i]) {
-          if (!a_Message.isMass) {
-            _Page.Notify("Someone mentioned " + Trigger + "!", a_Message.Text);
+  _Chat.CheckMentions = function (a_Message) {
+    //Uh, Ryalane. Dumb fucking question. Could you do that string.split, throw everything tolower, and say fuck off to Regex with if(str1 == str2)?
+    if (_Setting.settings && a_Message) {
+      // Split up the mentions Message
+      var Triggers = _Setting.settings.mentionTriggers.split(',');
+        var TextList = a_Message.Text.split(' ');
+      // Loop through mentions
+      Triggers.forEach(function(Trigger) {
+        for (var i = 0; i < TextList.length; i++) {
+          if (Trigger === TextList[i]) {
+            if (!a_Message.isMass) {
+              _Page.Notify("Someone mentioned " + Trigger + "!", a_Message.Text);
+            }
+            $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
           }
-          $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
         }
-      }
-    });
-  }
-};
+      });
+    }
+  };
 
 /**
   * Updates the chat window when the user goes to a different tab
