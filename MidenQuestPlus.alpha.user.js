@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.55
+// @version      0.56
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane
@@ -645,17 +645,21 @@ _Chat.RemoveMessage = function () {
   * Checks if there are any mentions of any mentionTriggers. Creates a notification and highlights
   * @return {Void}
   */
-_Chat.CheckMentions = function (Message) {
-  if (_Setting.settings) {
-    // Split up the mentions
+_Chat.CheckMentions = function (a_Message) {
+  //Uh, Ryalane. Dumb fucking question. Could you do that string.split, throw everything tolower, and say fuck off to Regex with if(str1 == str2)?
+  if (_Setting.settings && a_Message) {
+    // Split up the mentions Message
     var Triggers = _Setting.settings.mentionTriggers.split(',');
+      var TextList = a_Message.Text.split(' ');
     // Loop through mentions
     Triggers.forEach(function(Trigger) {
-      if (Message.Text.toLowerCase().indexOf(Trigger.toLowerCase()) !== -1) {
-        if (!Message.isMass) {
-          _Page.Notify("Someone mentioned " + Trigger + "!", Message.Text);
+      for (var i = 0; i < TextList.length; i++) {
+        if (Trigger === TextList[i]) {
+          if (!a_Message.isMass) {
+            _Page.Notify("Someone mentioned " + Trigger + "!", a_Message.Text);
+          }
+          $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
         }
-        $('#' + _Chat.IDNum).css('background', _Setting.settings.mentionBackground);
       }
     });
   }
