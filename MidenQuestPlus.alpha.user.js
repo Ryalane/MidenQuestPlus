@@ -723,7 +723,6 @@ _Chat.SendMessage = function (Message, type) {
       // Check if you sent it, and add it to the history if you did
       if (ParsedMessage.Username === _Setting.username) {
         _Chat.MessageHistory.unshift(ParsedMessage.Text);
-        console.log("Adding to History: " + ParsedMessage.Text);
       }
 
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
