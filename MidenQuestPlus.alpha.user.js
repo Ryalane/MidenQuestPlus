@@ -386,7 +386,8 @@ var _ServerMessage = _ServerMessage || {};
   * List of all server Options
   * TODO: Finish adding server options
   */
-_ServerMessage.Options = {
+  _ServerMessage.Options = {
+  List: { /* List of known options */
     Connect:          "CONNECTED",
     SetName:          "SETNAME",
     SetTitleCount:    "SETTITLECOUNT",
@@ -420,6 +421,24 @@ _ServerMessage.Options = {
     SetFish:          "SETFISH",
     BoostTimer:       "TIMER",
     OpenChest:        "OPENR" /* It's the box that pops up when you open a bag/key */
+  },
+    Find: function (a_Command) {
+      if (a_Command) {
+        // Loop through all the objects in List
+        for (var i = 0; i < Object.keys(this.List).length; i++) {
+          var key = Object.keys(this.List)[i];
+          var value = this.List[key];
+          if (a_Command === value) {
+            return key;
+          } else if (i === Object.keys(this.List).length - 1) {
+            return null;
+          }
+        }
+      }
+      else {
+        return null;
+      }
+    }
 };
 
 /**
@@ -429,64 +448,53 @@ _ServerMessage.Options = {
   */
 _ServerMessage.Compute = function (a_Data) {
   var RawData = a_Data.data;
-  var Command;
-  var Info;
   var Arr = RawData.split('|');
 
-  Command = Arr[0];
-  Info = Arr[1];
+  var RawCommand = Arr[0];
+  var Info = Arr[1];
 
-  // This really needs to be cleaned up.. maybe get rid of _ServerMessage.Options :(
-  if (Command) {
-    for (var i = 0; i < Object.keys(_ServerMessage.Options).length; i++) {
-      var key = Object.keys(_ServerMessage.Options)[i];
-      var value = _ServerMessage.Options[key];
-      if (Command === value) {
-        // We have a match; move on
-        switch (key) {
-          case "ChatStarted":
-            if (_Page.isLoaded) {
-              _Chat.UpdateChat(Info);
-            } else {
-              _Chat.Clear();
-            }
-          break;
-          case "Message":
-            if (_Page.isLoaded) {
-              _Chat.SendMessage(Info, "Normal");
-            }
-          break;
-          case "ChatNotification":
-            if (_Page.isLoaded) {
-              _Chat.UpdateTab(Info);
-            }
-          break;
-          case "TSData":
-            if (_Page.isLoaded) {
-              _Work.HandleWork(RawData);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          case "CD":
-            if (_Page.isLoaded) {
-              _Work.HandleWork(RawData);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          case "SetName":
-            if (!_Page.isLoaded) {
-              _Page.SetupUI(Info);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          default:
-            ServerReceptionHandler(RawData);
-          break;
-        }
+  var Command = _ServerMessage.Options.Find(RawCommand);
+
+  if (!Command) {
+    console.log("No Command");
+    ServerReceptionHandler(RawData);
+  } else {
+    if (_Page.isLoaded) {
+      switch(Command) {
+        case "ChatStarted":
+          _Chat.UpdateChat(Info);
+        break;
+        case "Message":
+          _Chat.SendMessage(Info, "Normal");
+        break;
+        case "ChatNotification":
+          _Chat.UpdateTab(Info);
+        break;
+        case "TSData":
+          _Work.HandleWork(RawData);
+        break;
+        default:
+          ServerReceptionHandler(RawData);
+        break;
+      }
+    } else {
+      // Since these ones will run the default handler, just put them here
+      switch(Command) {
+        case "ChatStarted":
+          _Chat.Clear();
+        break;
+        case "SetName":
+          ServerReceptionHandler(RawData);
+          _Page.SetupUI(Info);
+        break;
+        default:
+          ServerReceptionHandler(RawData);
+        break;
       }
     }
   }
 };
+
 
 /**********************************
 **                               **
