@@ -25,4 +25,5 @@ Link: https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MQP.beta.u
 # TODO List
 * Open image in chat button
 * Auto convert to links in chat
-
+* Radio buttons for timestamps (On, Off, Hover)
+* Chat FILTER; hide messages containing key words
