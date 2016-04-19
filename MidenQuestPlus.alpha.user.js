@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.61
+// @version      0.62
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane, Herpes
@@ -199,19 +199,6 @@ _Page.AddButton = function () {
   */
 _Page.SetStyle = function (StyleRules) {
   $( "<style>" + StyleRules + "</style>" ).appendTo( "head" );
-};
-
-/**
-  * Adds a link to the head element
-  * @param {String} Script Link
-  * @return {Void}
-  */
-_Page.SetScript = function (ScriptLink) {
-  var scriptElement = document.createElement( "script" );
-  scriptElement.type = "text/javascript";
-  scriptElement.src = ScriptLink;
-  document.head.appendChild( scriptElement );
-  console.log("Setting: " + ScriptLink);
 };
 
 /**
@@ -494,6 +481,9 @@ _ServerMessage.Compute = function (a_Data) {
           _Work.HandleWork(RawData);
           ServerReceptionHandler(RawData);
         break;
+        case "CD":
+          _Work.HandleWork(RawData);
+          ServerReceptionHandler(RawData);
         default:
           ServerReceptionHandler(RawData);
         break;
@@ -508,6 +498,9 @@ _ServerMessage.Compute = function (a_Data) {
           ServerReceptionHandler(RawData);
           _Page.SetupUI(Info);
         break;
+        case "CD":
+          ServerReceptionHandler(RawData);
+          _Page.SetupUI(Info);
         default:
           ServerReceptionHandler(RawData);
         break;
@@ -817,11 +810,17 @@ _Chat.SendMessage = function (Message, type) {
         }
       }
 
+      var tempText;
+      try {
+        Autolinker ? tempText = Autolinker.link(MessageText) : tempText = MessageText
+      } catch (e) {
+        tempText = MessageText
+      }
       $('#ChatLog').prepend('<div class="chat-shout" id="' + _Chat.IDNum + '"></div>');
       $('#' + _Chat.IDNum).append(Timestamp);
       $('#' + _Chat.IDNum).append(Title);
       $('#' + _Chat.IDNum).append(Name);
-      $('#' + _Chat.IDNum).append(Autolinker?Autolinker.link(MessageText):MessageText);
+      $('#' + _Chat.IDNum).append(tempText);
     }
 
     _Chat.CheckMentions(ParsedMessage);
@@ -977,10 +976,9 @@ _Work.UpdateTitle = function () {
   _Page.SetTitle(Title);
 };
 
-
 /**
   * Listens to the server messages
   * @return {Void}
   */
 ws.onmessage = _ServerMessage.Compute;
-$.getScript('http://gregjacobs.github.io/Autolinker.js/dist/Autolinker.min.js');
+$.getScript('https://gregjacobs.github.io/Autolinker.js/dist/Autolinker.min.js');
