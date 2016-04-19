@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.60
+// @version      0.61
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane, Herpes
 // @include      http://www.midenquest.com/Game.aspx
 // @include      http://midenquest.com/Game.aspx
-// @grant        none
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 /**
@@ -198,7 +198,20 @@ _Page.AddButton = function () {
   * @return {Void}
   */
 _Page.SetStyle = function (StyleRules) {
-  $( "<style>" + StyleRules + "</style>").appendTo( "head" );
+  $( "<style>" + StyleRules + "</style>" ).appendTo( "head" );
+};
+
+/**
+  * Adds a link to the head element
+  * @param {String} Script Link
+  * @return {Void}
+  */
+_Page.SetScript = function (ScriptLink) {
+  var scriptElement = document.createElement( "script" );
+  scriptElement.type = "text/javascript";
+  scriptElement.src = ScriptLink;
+  document.head.appendChild( scriptElement );
+  console.log("Setting: " + ScriptLink);
 };
 
 /**
@@ -217,6 +230,7 @@ _Page.SetTitle = function (Title) {
   */
 _Page.SetupUI = function (Username) {
   _Page.isLoaded = true;
+
   // Make the container
   $('#ChatSend').after('<button id="SettingsToggle" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Settings</span></button>');
   $('#MainPanel').after('<div id="Custom_MainBar"></div>');
@@ -282,6 +296,13 @@ _Page.SetupUI = function (Username) {
                   "}" +
                   ".chat-timestamp {" +
                   "font-weight: normal;" +
+                  "display:none;" +
+                  "text-indent:0;" +
+                  "}" +
+                  ".chat-shout:hover" +
+                  ".chat-timestamp, .chat-shout:hover .chat-timestamp {" +
+                  "display: inline;" +
+                  "float: right;" +
                   "}" +
                   ".chat-title {" +
                   "font-weight: bold;" +
@@ -639,7 +660,10 @@ _Chat.ParseMessage = function (Message, type) {
   }
 };
 
-
+/**
+  * Parses the message to look for [/me]
+  * @return {Bool}
+  */
 _Chat.isAction = function (Text) {
   if (Text.indexOf("[/me]") > -1) {
     return true;
@@ -648,6 +672,10 @@ _Chat.isAction = function (Text) {
   }
 };
 
+/**
+  * Parses the message to look for [/#color]
+  * @return {Bool}
+  */
 _Chat.isColor = function (Text) {
   ResMatch = /\[\/#([0-9a-f]{6}|[0-9a-f]{3})]/gi;
   var temp = Text.match(ResMatch);
@@ -683,7 +711,6 @@ _Chat.RemoveMessage = function () {
   * @return {Void}
   */
   _Chat.CheckMentions = function (a_Message) {
-    //Uh, Ryalane. Dumb fucking question. Could you do that string.split, throw everything tolower, and say fuck off to Regex with if(str1 == str2)?
     if (_Setting.settings && a_Message) {
       // Split up the mentions Message
       var Triggers = _Setting.settings.mentionTriggers.split(',');
@@ -691,7 +718,7 @@ _Chat.RemoveMessage = function () {
       // Loop through mentions
       Triggers.forEach(function(Trigger) {
         for (var i = 0; i < TextList.length; i++) {
-          if (Trigger === TextList[i]) {
+          if (Trigger.toLowerCase() === TextList[i].toLowerCase()) {
             if (!a_Message.isMass) {
               _Page.Notify("Someone mentioned " + Trigger + "!", a_Message.Text);
             }
@@ -742,6 +769,7 @@ _Chat.GetPreviousHistory = function () {
   }
 }
 
+
 /**
   * Sends a message to the chat box
   * @return {Void}
@@ -765,7 +793,6 @@ _Chat.SendMessage = function (Message, type) {
       if (ParsedMessage.Username === _Setting.username) {
         _Chat.MessageHistory.unshift(ParsedMessage.Text);
       }
-
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
       var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
       var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
@@ -794,7 +821,7 @@ _Chat.SendMessage = function (Message, type) {
       $('#' + _Chat.IDNum).append(Timestamp);
       $('#' + _Chat.IDNum).append(Title);
       $('#' + _Chat.IDNum).append(Name);
-      $('#' + _Chat.IDNum).append(MessageText)
+      $('#' + _Chat.IDNum).append(Autolinker?Autolinker.link(MessageText):MessageText);
     }
 
     _Chat.CheckMentions(ParsedMessage);
@@ -956,3 +983,4 @@ _Work.UpdateTitle = function () {
   * @return {Void}
   */
 ws.onmessage = _ServerMessage.Compute;
+$.getScript('http://gregjacobs.github.io/Autolinker.js/dist/Autolinker.min.js');

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.55
+// @version      0.60
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
-// @author       Ryalane
+// @author       Ryalane, Herpes
 // @include      http://www.midenquest.com/Game.aspx
 // @include      http://midenquest.com/Game.aspx
-// @grant        none
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 /**
@@ -43,6 +43,7 @@
 **********************************/
 
 var _Setting = _Setting || {};
+
 
 /**
   * Retrieves the settings from the LocalStorage
@@ -188,7 +189,17 @@ _Page.AddButton = function () {
   * @return {Void}
   */
 _Page.SetStyle = function (StyleRules) {
-  $( "<style>" + StyleRules + "</style>").appendTo( "head" );
+  $( "<style>" + StyleRules + "</style>" ).appendTo( "head" );
+};
+
+/**
+  * Adds a link to the head element
+  * @param {String} Script Link
+  * @return {Void}
+  */
+_Page.SetScript = function (ScriptLink) {
+  console.log("Setting: " + ScriptLink);
+  $( '<script type="text/javascript" src="' + ScriptLink + '"></script>').appendTo( 'head' );
 };
 
 /**
@@ -207,12 +218,15 @@ _Page.SetTitle = function (Title) {
   */
 _Page.SetupUI = function (Username) {
   _Page.isLoaded = true;
+
+  _Page.SetScript("http://gregjacobs.github.io/Autolinker.js/dist/Autolinker.min.js");
+
   // Make the container
   $('#ChatSend').after('<button id="SettingsToggle" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Settings</span></button>');
   $('#MainPanel').after('<div id="Custom_MainBar"></div>');
   // Set the title
   $('#Custom_MainBar').append('<h1 id="Custom_MainBar_Title"></h1>');
-  $('#Custom_MainBar_Title').text('MidenQuest+ v0.1');
+  $('#Custom_MainBar_Title').text('MidenQuest+ v');
   // Setup boxes
   $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Workload" class="Custom_MainBar_Box"></div>');
   $('#Custom_MainBar_Box_Workload').append('<h1>Workload Settings</h1>');
@@ -272,6 +286,13 @@ _Page.SetupUI = function (Username) {
                   "}" +
                   ".chat-timestamp {" +
                   "font-weight: normal;" +
+                  "display:none;" +
+                  "text-indent:0;" +
+                  "}" +
+                  ".chat-shout:hover" +
+                  ".chat-timestamp, .chat-shout:hover .chat-timestamp {" +
+                  "display: inline;" +
+                  "float: right;" +
                   "}" +
                   ".chat-title {" +
                   "font-weight: bold;" +
@@ -376,7 +397,8 @@ var _ServerMessage = _ServerMessage || {};
   * List of all server Options
   * TODO: Finish adding server options
   */
-_ServerMessage.Options = {
+  _ServerMessage.Options = {
+  List: { /* List of known options */
     Connect:          "CONNECTED",
     SetName:          "SETNAME",
     SetTitleCount:    "SETTITLECOUNT",
@@ -410,6 +432,24 @@ _ServerMessage.Options = {
     SetFish:          "SETFISH",
     BoostTimer:       "TIMER",
     OpenChest:        "OPENR" /* It's the box that pops up when you open a bag/key */
+  },
+    Find: function (a_Command) {
+      if (a_Command) {
+        // Loop through all the objects in List
+        for (var i = 0; i < Object.keys(this.List).length; i++) {
+          var key = Object.keys(this.List)[i];
+          var value = this.List[key];
+          if (a_Command === value) {
+            return key;
+          } else if (i === Object.keys(this.List).length - 1) {
+            return null;
+          }
+        }
+      }
+      else {
+        return null;
+      }
+    }
 };
 
 /**
@@ -419,64 +459,53 @@ _ServerMessage.Options = {
   */
 _ServerMessage.Compute = function (a_Data) {
   var RawData = a_Data.data;
-  var Command;
-  var Info;
   var Arr = RawData.split('|');
 
-  Command = Arr[0];
-  Info = Arr[1];
+  var RawCommand = Arr[0];
+  var Info = Arr[1];
 
-  // This really needs to be cleaned up.. maybe get rid of _ServerMessage.Options :(
-  if (Command) {
-    for (var i = 0; i < Object.keys(_ServerMessage.Options).length; i++) {
-      var key = Object.keys(_ServerMessage.Options)[i];
-      var value = _ServerMessage.Options[key];
-      if (Command === value) {
-        // We have a match; move on
-        switch (key) {
-          case "ChatStarted":
-            if (_Page.isLoaded) {
-              _Chat.UpdateChat(Info);
-            } else {
-              _Chat.Clear();
-            }
-          break;
-          case "Message":
-            if (_Page.isLoaded) {
-              _Chat.SendMessage(Info, "Normal");
-            }
-          break;
-          case "ChatNotification":
-            if (_Page.isLoaded) {
-              _Chat.UpdateTab(Info);
-            }
-          break;
-          case "TSData":
-            if (_Page.isLoaded) {
-              _Work.HandleWork(RawData);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          case "CD":
-            if (_Page.isLoaded) {
-              _Work.HandleWork(RawData);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          case "SetName":
-            if (!_Page.isLoaded) {
-              _Page.SetupUI(Info);
-            }
-            ServerReceptionHandler(RawData);
-          break;
-          default:
-            ServerReceptionHandler(RawData);
-          break;
-        }
+  var Command = _ServerMessage.Options.Find(RawCommand);
+
+  if (!Command) {
+    ServerReceptionHandler(RawData);
+  } else {
+    if (_Page.isLoaded) {
+      switch(Command) {
+        case "ChatStarted":
+          _Chat.UpdateChat(Info);
+        break;
+        case "Message":
+          _Chat.SendMessage(Info, "Normal");
+        break;
+        case "ChatNotification":
+          _Chat.UpdateTab(Info);
+        break;
+        case "TSData":
+          _Work.HandleWork(RawData);
+          ServerReceptionHandler(RawData);
+        break;
+        default:
+          ServerReceptionHandler(RawData);
+        break;
+      }
+    } else {
+      // Since these ones will run the default handler, just put them here
+      switch(Command) {
+        case "ChatStarted":
+          _Chat.Clear();
+        break;
+        case "SetName":
+          ServerReceptionHandler(RawData);
+          _Page.SetupUI(Info);
+        break;
+        default:
+          ServerReceptionHandler(RawData);
+        break;
       }
     }
   }
 };
+
 
 /**********************************
 **                               **
@@ -516,7 +545,14 @@ _Chat.Message = function(a_Text, a_Text_Color, a_Username, a_Title, a_Title_Colo
   this.isAction = a_isAction;
 };
 
+/**
+  * Holds the CURRENT USERS chat history PER Tab
+  * Feel free to update this
+  */
 _Chat.MessageHistory = [];
+/**
+  * Used for keeping track of which item in history to look at
+  */
 _Chat.MessageHistoryLocation = 0;
 
 /**
@@ -614,6 +650,10 @@ _Chat.ParseMessage = function (Message, type) {
   }
 };
 
+/**
+  * Parses the message to look for [/me]
+  * @return {Bool}
+  */
 _Chat.isAction = function (Text) {
   if (Text.indexOf("[/me]") > -1) {
     return true;
@@ -622,6 +662,10 @@ _Chat.isAction = function (Text) {
   }
 };
 
+/**
+  * Parses the message to look for [/#color]
+  * @return {Bool}
+  */
 _Chat.isColor = function (Text) {
   ResMatch = /\[\/#([0-9a-f]{6}|[0-9a-f]{3})]/gi;
   var temp = Text.match(ResMatch);
@@ -657,7 +701,6 @@ _Chat.RemoveMessage = function () {
   * @return {Void}
   */
   _Chat.CheckMentions = function (a_Message) {
-    //Uh, Ryalane. Dumb fucking question. Could you do that string.split, throw everything tolower, and say fuck off to Regex with if(str1 == str2)?
     if (_Setting.settings && a_Message) {
       // Split up the mentions Message
       var Triggers = _Setting.settings.mentionTriggers.split(',');
@@ -665,7 +708,7 @@ _Chat.RemoveMessage = function () {
       // Loop through mentions
       Triggers.forEach(function(Trigger) {
         for (var i = 0; i < TextList.length; i++) {
-          if (Trigger === TextList[i]) {
+          if (Trigger.toLowerCase() === TextList[i].toLowerCase()) {
             if (!a_Message.isMass) {
               _Page.Notify("Someone mentioned " + Trigger + "!", a_Message.Text);
             }
@@ -716,6 +759,15 @@ _Chat.GetPreviousHistory = function () {
   }
 }
 
+_Chat.AutoLink = function (Message) {
+  //if (Autolinker) {
+  //  return Autolinker.link( Message, { newWindow: true } );
+  //} else {
+  //  return Message;
+  //}
+  return Message;
+}
+
 /**
   * Sends a message to the chat box
   * @return {Void}
@@ -739,7 +791,7 @@ _Chat.SendMessage = function (Message, type) {
       if (ParsedMessage.Username === _Setting.username) {
         _Chat.MessageHistory.unshift(ParsedMessage.Text);
       }
-
+      ParsedMessage.Text = _Chat.AutoLink(ParsedMessage.Text)
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
       var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
       var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
