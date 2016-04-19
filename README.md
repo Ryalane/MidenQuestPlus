@@ -23,6 +23,7 @@ Feature Requests, Bug Reports, Questions, and Discussion: Message me in game, or
 Link: https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MQP.beta.user.js
 
 # TODO List
+* Radio, Color, and Button Setting options
 * Open image in chat button
 * Auto convert to links in chat
 * Radio buttons for timestamps (On, Off, Hover)
