@@ -27,3 +27,4 @@ Link: https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MQP.beta.u
 * Auto convert to links in chat
 * Radio buttons for timestamps (On, Off, Hover)
 * Chat FILTER; hide messages containing key words
+* Turn Hunter2 into ***** Kappa
