@@ -19,14 +19,17 @@ Feature Requests, Bug Reports, Questions, and Discussion: Message me in game, or
 * Can customize how much history to keep
 * Shows workload in title
 * Notifies you when you are done working
+* Chat timestamps are moved by default, adding settings soon
+* Chat commands ([/me], and [/#colorcode])
 
 Link: https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MQP.beta.user.js
 
 # TODO List
-* Radio, Color, and Button Setting options
+* Color and Button Setting options
 * Open image in chat button
 * Auto convert to links in chat
 * Radio buttons for timestamps (On, Off, Hover)
 * Chat FILTER; hide messages containing key words
 * Remove spaces from mention keywords
+* Updated parser if anyone wants to redo it
 * Turn Hunter2 into ***** Kappa
