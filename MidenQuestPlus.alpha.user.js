@@ -116,6 +116,10 @@ _Page.Notify = function (Title, Body) {
       title: Title,
       body: Body
     });
+    notification.onclick = function (event) {
+      window.focus();
+      this.close();
+    };
   }
 };
 
@@ -150,14 +154,6 @@ _Page.AddBool = function (a_Container, a_Name, a_Description, a_DefaultSetting, 
 };
 
 /**
-  * Creates a Radio button
-  * @return {Void}
-  */
-_Page.AddRadio = function () {
-
-};
-
-/**
   * Creates an Input box
   * @param {String} a_Container
   * @param {String} a_Name
@@ -182,6 +178,47 @@ _Page.AddInput = function (a_Container, a_Name, a_Description, a_DefaultSetting,
           }
   });
   _Setting.settings[a_Name] = a_DefaultSetting;
+};
+
+/**
+  * Creates a Radio button group
+  * @return {Void}
+  */
+_Page.AddRadio = function (a_Container, a_Name, a_Description, a_Items, a_Callback) {
+  //items JSON format:
+            //    {"id":[{"value":<string>,
+            //            "friendlyName":<string>}]};
+
+  a_DefaultSetting = _Setting.settings[a_Name] || a_Items.id;
+
+  var AppendTo = $(a_Container);
+
+  $(AppendTo).append('<div id="settingsContainer-' + a_Name + '"><span>' + a_Description + '</span><br><br>');
+  for (i in a_Items.id) {
+      $("#settingsContainer-" + a_Name).append('<label><input type="radio" name="setting-' + a_Name + '" value="' + a_Items.id[i].value + '"> ' + a_Items.id[i].friendlyName + '</input></label><br>');
+  }
+  $("#settingsContainer-" + a_Name).append('</div>');
+
+  if (_Setting.settings[a_Name] != undefined) {
+      $("input:radio[name='setting-" + a_Name + "'][value='" + _Setting.settings[a_Name] + "']").prop("checked", true);
+  }
+  else {
+      $("input:radio[name='setting-" + a_Name + "'][value='" + a_DefaultSetting + "']").prop("checked", true);
+  }
+
+  $("input:radio[name='setting-" + a_Name + "']").on("click", function () {
+      _Setting.settings[a_Name] = $("input:radio[name='setting-" + a_Name + "']:checked").val();
+      _Setting.Save(_Setting.settings);
+  });
+
+  if (a_Callback) {
+      callback();
+  }
+};
+
+
+_Page.AddColor = function (a_Container, a_Name, a_Description, a_Items, a_DefaultSetting, a_Callback) {
+
 };
 
 /**
@@ -324,6 +361,11 @@ _Page.SetupUI = function (Username) {
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'MaxChatHistory', "Max Chat History", 50);
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionTriggers', 'Mention Keywords', Username);
   _Page.AddInput('#Custom_MainBar_Box_Chat', 'mentionBackground', 'Mention Background Colour', 'rgba(255, 165, 50, 0.5)');
+  var tempRadioButtons = {id: [{value: "ShowTimestamps", friendlyName: "Show Timestamps"},
+                               {value: "HideTimestamps", friendlyName: "Hide Timestamps"},
+                               {value: "HoverTimestamps", friendlyName: "Toggle Timestamps (Hover)"}]};
+  // Use this for styling the timestamps
+  _Page.AddRadio('#Custom_MainBar_Box_Chat', 'timestampOptions', "Timestamp Options", tempRadioButtons, false);
 
   _Setting.username = Username;
   $("#ChatCh1").click(function () {
@@ -812,7 +854,7 @@ _Chat.SendMessage = function (Message, type) {
 
       var tempText;
       try {
-        Autolinker ? tempText = Autolinker.link(MessageText) : tempText = MessageText
+        Autolinker ? tempText = Autolinker.link(MessageText, {twitter:false}) : tempText = MessageText
       } catch (e) {
         tempText = MessageText
       }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MidenQuest+
 // @namespace    https://github.com/Ryalane/MidenQuestPlus
-// @version      0.60
+// @version      0.62
 // @description  MidenQuest Enhancement Script
 // @updateURL    https://raw.githubusercontent.com/Ryalane/MidenQuestPlus/master/MidenQuestPlus.alpha.user.js
 // @author       Ryalane, Herpes
@@ -44,6 +44,15 @@
 
 var _Setting = _Setting || {};
 
+/**
+  * Gets the version of the script
+  * @return {String} Version
+  */
+_Setting.Version = function () {
+  if (typeof GM_info !== "undefined") {
+      return GM_info.script.version;
+  }
+};
 
 /**
   * Retrieves the settings from the LocalStorage
@@ -86,7 +95,7 @@ var _Page = _Page || {};
 /**
   * Used to make sure none of the DOM watches are enabled until the server has set up the page
   */
-_Page.isLoaded = false;
+_Page.isLoaded = true;
 
 /**
   * Creates a Desktop Notification
@@ -175,6 +184,10 @@ _Page.AddInput = function (a_Container, a_Name, a_Description, a_DefaultSetting,
   _Setting.settings[a_Name] = a_DefaultSetting;
 };
 
+_Page.AddColorPicker = function () {
+
+};
+
 /**
   * Creates a Button
   * @return {Void}
@@ -190,16 +203,6 @@ _Page.AddButton = function () {
   */
 _Page.SetStyle = function (StyleRules) {
   $( "<style>" + StyleRules + "</style>" ).appendTo( "head" );
-};
-
-/**
-  * Adds a link to the head element
-  * @param {String} Script Link
-  * @return {Void}
-  */
-_Page.SetScript = function (ScriptLink) {
-  console.log("Setting: " + ScriptLink);
-  $( '<script type="text/javascript" src="' + ScriptLink + '"></script>').appendTo( 'head' );
 };
 
 /**
@@ -219,14 +222,12 @@ _Page.SetTitle = function (Title) {
 _Page.SetupUI = function (Username) {
   _Page.isLoaded = true;
 
-  _Page.SetScript("http://gregjacobs.github.io/Autolinker.js/dist/Autolinker.min.js");
-
   // Make the container
   $('#ChatSend').after('<button id="SettingsToggle" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Settings</span></button>');
   $('#MainPanel').after('<div id="Custom_MainBar"></div>');
   // Set the title
   $('#Custom_MainBar').append('<h1 id="Custom_MainBar_Title"></h1>');
-  $('#Custom_MainBar_Title').text('MidenQuest+ v');
+  $('#Custom_MainBar_Title').text('MidenQuest+ v' + _Setting.Version());
   // Setup boxes
   $('#Custom_MainBar').append('<div id="Custom_MainBar_Box_Workload" class="Custom_MainBar_Box"></div>');
   $('#Custom_MainBar_Box_Workload').append('<h1>Workload Settings</h1>');
@@ -484,6 +485,9 @@ _ServerMessage.Compute = function (a_Data) {
           _Work.HandleWork(RawData);
           ServerReceptionHandler(RawData);
         break;
+        case "CD":
+          _Work.HandleWork(RawData);
+          ServerReceptionHandler(RawData);
         default:
           ServerReceptionHandler(RawData);
         break;
@@ -498,6 +502,9 @@ _ServerMessage.Compute = function (a_Data) {
           ServerReceptionHandler(RawData);
           _Page.SetupUI(Info);
         break;
+        case "CD":
+          ServerReceptionHandler(RawData);
+          _Page.SetupUI(Info);
         default:
           ServerReceptionHandler(RawData);
         break;
@@ -759,14 +766,6 @@ _Chat.GetPreviousHistory = function () {
   }
 }
 
-_Chat.AutoLink = function (Message) {
-  //if (Autolinker) {
-  //  return Autolinker.link( Message, { newWindow: true } );
-  //} else {
-  //  return Message;
-  //}
-  return Message;
-}
 
 /**
   * Sends a message to the chat box
@@ -791,7 +790,6 @@ _Chat.SendMessage = function (Message, type) {
       if (ParsedMessage.Username === _Setting.username) {
         _Chat.MessageHistory.unshift(ParsedMessage.Text);
       }
-      ParsedMessage.Text = _Chat.AutoLink(ParsedMessage.Text)
       var Timestamp = '<span class="chat-timestamp">[' + ParsedMessage.Timestamp + ']</span>';
       var Title = '<span class="chat-title" onclick="' + ParsedMessage.UserPage + '" style="color: ' + ParsedMessage.Title.Color + '">[' + ParsedMessage.Title.Text + '] </span>';
       var Name = '<span class="chat-name" onclick="' + ParsedMessage.UserPage + '">' + ParsedMessage.Username + ': </span>';
@@ -816,11 +814,17 @@ _Chat.SendMessage = function (Message, type) {
         }
       }
 
+      var tempText;
+      try {
+        Autolinker ? tempText = Autolinker.link(MessageText) : tempText = MessageText
+      } catch (e) {
+        tempText = MessageText
+      }
       $('#ChatLog').prepend('<div class="chat-shout" id="' + _Chat.IDNum + '"></div>');
       $('#' + _Chat.IDNum).append(Timestamp);
       $('#' + _Chat.IDNum).append(Title);
       $('#' + _Chat.IDNum).append(Name);
-      $('#' + _Chat.IDNum).append(MessageText)
+      $('#' + _Chat.IDNum).append(tempText);
     }
 
     _Chat.CheckMentions(ParsedMessage);
@@ -888,6 +892,7 @@ _Chat.NextTab = function () {
     _Chat.Clear();
     _Chat.ResetTab(NextTab);
     _Chat.CurrentTab = NextTab;
+    $('#txtMessage').focus();
   }
 }
 
@@ -976,9 +981,10 @@ _Work.UpdateTitle = function () {
   _Page.SetTitle(Title);
 };
 
-
 /**
   * Listens to the server messages
   * @return {Void}
   */
 ws.onmessage = _ServerMessage.Compute;
+$.getScript('https://gregjacobs.github.io/Autolinker.js/dist/Autolinker.min.js');
+// Add $('#txtMessage').focus() to tab
